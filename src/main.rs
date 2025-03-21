@@ -1,3 +1,19 @@
+//Parsing Applications
+
+//This exercise is the starting point to a sequence of programming exercises. Over the sequence, you implement a simple programming language based on the simply typed lambda calculus.
+
+//First, create a new Rust project with cargo new stlc_project. Then add the nom library as a dependency: cargo add nom@8. Next, copy the main.rs from the starter to src/main.rs and open it in your editor.
+
+//The starter code comes with a partially implemented parser for the new language. Your task is to implement the parse_app function. The implementation should be quite similar to parsing infix notation (which was done in a previous exercise).
+
+//The parser should be able to parse expressions such as
+
+//f x
+//f (add x y)
+//and (fun x, x) z
+
+//It is recommended to use the fold_many0 combinator.
+
 use nom::{
     branch::alt,
     bytes::complete::tag,
