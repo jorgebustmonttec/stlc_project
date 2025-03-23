@@ -20,7 +20,7 @@ use nom::{
     character::complete::{alpha1, alphanumeric0, char, multispace0, multispace1},
     combinator::verify,
     multi::fold_many0,
-    sequence::delimited,
+    sequence::{delimited, preceded},
     IResult, Parser,
 };
 
@@ -87,9 +87,17 @@ fn parse_paren(input: &str) -> IResult<&str, Term> {
 }
 
 fn parse_app(input: &str) -> IResult<&str, Term> {
-    let (rest, t1) = alt((parse_paren, parse_var, parse_abs)).parse(input)?;
+    let (rest, first_term) = alt((parse_paren, parse_var, parse_abs)).parse(input)?;
 
-    todo!()
+    fold_many0(
+        preceded(
+            multispace1, // Skip at least one space before the next subterm
+            alt((parse_paren, parse_var, parse_abs)),
+        ),
+        move || first_term.clone(), // Closure returning the initial Term
+        |acc, t| app(acc, t),       // Make an application for each subsequent term
+    )
+    .parse(rest)
 }
 
 fn parse_term(input: &str) -> IResult<&str, Term> {
