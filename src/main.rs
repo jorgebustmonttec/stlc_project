@@ -1,106 +1,67 @@
-// Substitution
-
 /*
 
-In this exercise, you will implement substitution. You have two options for getting started:
+Term Completeness
 
-Use your solution to the previous exercise (Free) as the starting point, or
-use the provided starter code.
+In this exercise, you will implement a function for checking if a term is complete. This exercise is optional in the sense that the next exercise (Beta Reduction Step) in chapter 4 is already available for you.
+
 The starter code comes with the following files:
 
 term.rs: contains the definition for Term and its methods.
 lib.rs: makes the term.rs module part of the library crate.
-main.rs: a REPL to testing and experimenting. Run cargo add rustyline@15 to add the required dependency for the REPL to work.
+main.rs: a REPL for testing and experimenting.
 term/display.rs: pretty printer for Term.
-Your task is to implement the subst method in term.rs according to the material. Its type signature is as follows:
+Implement the is_complete_with and is_complete methods for checking whether a term is complete according to the definition in the material.
 
-impl Term {
-    pub fn subst(self, x: &str, v: Self) -> Self {
-        todo!()
-    }
+pub fn is_complete_with(&self, ctx: HashSet<String>) -> bool {
+    todo!()
 }
-See Definition 6.3.5 for the exact specification for substitution. The grader only tests the subst method.
+
+pub fn is_complete(&self) -> bool {
+    todo!()
+}
+The grader only tests the is_complete and is_complete_with methods.
 
 
 
 
 To start the REPL, run cargo run. Here is a sample from how the REPL works:
 
-Enter :q or Ctrl+C to quit.
-t? x
-x? x
-v? fun x, x
-[x ↦ 𝜆 x. x] x = 𝜆 x. x
-t? fun x, y
-x? y
-v? z
-[y ↦ z] 𝜆 x. y = 𝜆 x. z
-t? fun x, y
-x? x
-v? z
-[x ↦ z] 𝜆 x. y = 𝜆 x. y
+> x
+x is not complete
+> fun x, x
+𝜆 x. x is complete
+> fun x, y
+𝜆 x. y is not complete
+> fun y, fun x, y
+𝜆 y. 𝜆 x. y is complete
 
 */
 
 pub mod term;
 
-use crate::term::parse::{parse_term, parse_variable_name};
-use crate::term::Term;
+use crate::term::parse::parse_term;
 use nom::combinator::all_consuming;
 use nom::Parser;
 
 use rustyline::{error::ReadlineError, DefaultEditor};
 
-enum State {
-    Start,
-    HasTerm(Term),
-    HasTermVar(Term, String),
+fn process(line: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let (_, t) = all_consuming(parse_term)
+        .parse(line)
+        .map_err(|e| e.to_string())?;
+    println!(
+        "{t} is {}complete",
+        if t.is_complete() { "" } else { "not " }
+    );
+    Ok(())
 }
-
-impl State {
-    fn prompt(&self) -> &'static str {
-        match self {
-            Start => "t? ",
-            HasTerm(_) => "x? ",
-            HasTermVar(_, _) => "v? ",
-        }
-    }
-
-    fn process(&self, line: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        match self {
-            Start => {
-                let (_, t) = all_consuming(parse_term)
-                    .parse(line)
-                    .map_err(|e| e.to_string())?;
-                Ok(HasTerm(t))
-            }
-            HasTerm(t) => {
-                let (_, x) = all_consuming(parse_variable_name)
-                    .parse(line)
-                    .map_err(|e| e.to_string())?;
-                Ok(HasTermVar(t.clone(), x))
-            }
-            HasTermVar(t, x) => {
-                let (_, v) = all_consuming(parse_term)
-                    .parse(line)
-                    .map_err(|e| e.to_string())?;
-                print!("[{x} ↦ {v}] {t} = ");
-                println!("{}", t.clone().subst(&x, v));
-                Ok(Start)
-            }
-        }
-    }
-}
-
-use State::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rl = DefaultEditor::new()?;
-    let mut state = Start;
     println!("Enter :q or Ctrl+C to quit.");
 
     loop {
-        let readline = rl.readline(state.prompt());
+        let readline = rl.readline("> ");
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_str())?;
@@ -108,10 +69,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     break;
                 }
 
-                match state.process(&line) {
-                    Ok(next_state) => state = next_state,
-                    Err(e) => eprintln!("{e}"),
-                };
+                if let Err(e) = process(&line) {
+                    eprintln!("{e}");
+                }
             }
             Err(ReadlineError::Interrupted | ReadlineError::Eof) => {
                 break;
