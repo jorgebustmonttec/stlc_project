@@ -1,105 +1,126 @@
-use nom::{
-    branch::alt,
-    bytes::complete::tag,
-    character::complete::{alpha1, alphanumeric0, char, multispace0, multispace1},
-    combinator::verify,
-    multi::fold_many0,
-    sequence::delimited,
-    IResult, Parser,
-};
+// Substitution
 
-#[derive(Debug, Clone, PartialEq)]
-enum Term {
-    Var(String),
-    App(Box<Term>, Box<Term>),
-    Abs { var: String, body: Box<Term> },
+/*
+
+In this exercise, you will implement substitution. You have two options for getting started:
+
+Use your solution to the previous exercise (Free) as the starting point, or
+use the provided starter code.
+The starter code comes with the following files:
+
+term.rs: contains the definition for Term and its methods.
+lib.rs: makes the term.rs module part of the library crate.
+main.rs: a REPL to testing and experimenting. Run cargo add rustyline@15 to add the required dependency for the REPL to work.
+term/display.rs: pretty printer for Term.
+Your task is to implement the subst method in term.rs according to the material. Its type signature is as follows:
+
+impl Term {
+    pub fn subst(self, x: &str, v: Self) -> Self {
+        todo!()
+    }
+}
+See Definition 6.3.5 for the exact specification for substitution. The grader only tests the subst method.
+
+
+
+
+To start the REPL, run cargo run. Here is a sample from how the REPL works:
+
+Enter :q or Ctrl+C to quit.
+t? x
+x? x
+v? fun x, x
+[x ↦ 𝜆 x. x] x = 𝜆 x. x
+t? fun x, y
+x? y
+v? z
+[y ↦ z] 𝜆 x. y = 𝜆 x. z
+t? fun x, y
+x? x
+v? z
+[x ↦ z] 𝜆 x. y = 𝜆 x. y
+
+*/
+
+pub mod term;
+
+use crate::term::parse::{parse_term, parse_variable_name};
+use crate::term::Term;
+use nom::combinator::all_consuming;
+use nom::Parser;
+
+use rustyline::{error::ReadlineError, DefaultEditor};
+
+enum State {
+    Start,
+    HasTerm(Term),
+    HasTermVar(Term, String),
 }
 
-use Term::*;
+impl State {
+    fn prompt(&self) -> &'static str {
+        match self {
+            Start => "t? ",
+            HasTerm(_) => "x? ",
+            HasTermVar(_, _) => "v? ",
+        }
+    }
 
-// Term utilities
-
-impl From<&str> for Term {
-    fn from(var: &str) -> Self {
-        Var(var.to_string())
+    fn process(&self, line: &str) -> Result<Self, Box<dyn std::error::Error>> {
+        match self {
+            Start => {
+                let (_, t) = all_consuming(parse_term)
+                    .parse(line)
+                    .map_err(|e| e.to_string())?;
+                Ok(HasTerm(t))
+            }
+            HasTerm(t) => {
+                let (_, x) = all_consuming(parse_variable_name)
+                    .parse(line)
+                    .map_err(|e| e.to_string())?;
+                Ok(HasTermVar(t.clone(), x))
+            }
+            HasTermVar(t, x) => {
+                let (_, v) = all_consuming(parse_term)
+                    .parse(line)
+                    .map_err(|e| e.to_string())?;
+                print!("[{x} ↦ {v}] {t} = ");
+                println!("{}", t.clone().subst(&x, v));
+                Ok(Start)
+            }
+        }
     }
 }
 
-fn fun(var: impl AsRef<str>, body: impl Into<Term>) -> Term {
-    Abs {
-        var: var.as_ref().into(),
-        body: body.into().into(),
+use State::*;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut rl = DefaultEditor::new()?;
+    let mut state = Start;
+    println!("Enter :q or Ctrl+C to quit.");
+
+    loop {
+        let readline = rl.readline(state.prompt());
+        match readline {
+            Ok(line) => {
+                rl.add_history_entry(line.as_str())?;
+                if line.trim() == ":q" {
+                    break;
+                }
+
+                match state.process(&line) {
+                    Ok(next_state) => state = next_state,
+                    Err(e) => eprintln!("{e}"),
+                };
+            }
+            Err(ReadlineError::Interrupted | ReadlineError::Eof) => {
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+        }
     }
-}
-fn app(t1: impl Into<Term>, t2: impl Into<Term>) -> Term {
-    App(t1.into().into(), t2.into().into())
-}
-
-// Actual parser
-
-pub fn parse_variable_name(input: &str) -> IResult<&str, String> {
-    verify(
-        (alpha1, alphanumeric0).map(|(s1, s2)| format!("{s1}{s2}")),
-        |name: &str| name != "fun",
-    )
-    .parse(input)
-}
-
-fn parse_var(input: &str) -> IResult<&str, Term> {
-    parse_variable_name.map(Var).parse(input)
-}
-
-fn parse_abs(input: &str) -> IResult<&str, Term> {
-    (
-        tag("fun"),
-        multispace1,
-        parse_variable_name,
-        multispace0,
-        char(','),
-        multispace0,
-        parse_term,
-    )
-        .map(|(_0, _1, var, _3, _4, _5, body)| Abs {
-            var,
-            body: body.into(),
-        })
-        .parse(input)
-}
-
-fn parse_paren(input: &str) -> IResult<&str, Term> {
-    delimited(char('('), parse_term, char(')')).parse(input)
-}
-
-fn parse_app(input: &str) -> IResult<&str, Term> {
-    let (rest, t1) = alt((parse_paren, parse_var, parse_abs)).parse(input)?;
-
-    todo!()
-}
-
-fn parse_term(input: &str) -> IResult<&str, Term> {
-    alt((parse_app, parse_paren, parse_var, parse_abs)).parse(input)
-}
-
-fn main() {
-    println!("Running tests for parse_term");
-
-    assert_eq!(parse_term("fun x, x"), Ok(("", fun("x", "x"))));
-    assert_eq!(parse_term("fun x, f x"), Ok(("", fun("x", app("f", "x")))));
-    assert_eq!(parse_term("a b c"), Ok(("", app(app("a", "b"), "c"))));
-    assert_eq!(parse_term("a (b c)"), Ok(("", app("a", app("b", "c")))));
-
-    assert_eq!(
-        parse_term("a (b c) d"),
-        Ok(("", app(app("a", app("b", "c")), "d")))
-    );
-    assert_eq!(
-        parse_term("(fun x, x) x"),
-        Ok(("", app(fun("x", "x"), "x")))
-    );
-    assert_eq!(
-        parse_term("a (fun x, x)"),
-        Ok(("", app("a", fun("x", "x"))))
-    );
-
-    println!("All tests passed!");
+    Ok(())
 }
