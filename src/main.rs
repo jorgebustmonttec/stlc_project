@@ -40,10 +40,10 @@ x is not complete
 pub mod term;
 
 use crate::term::parse::parse_term;
-use nom::combinator::all_consuming;
 use nom::Parser;
+use nom::combinator::all_consuming;
 
-use rustyline::{error::ReadlineError, DefaultEditor};
+use rustyline::{DefaultEditor, error::ReadlineError};
 
 fn process(line: &str) -> Result<(), Box<dyn std::error::Error>> {
     let (_, t) = all_consuming(parse_term)

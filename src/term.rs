@@ -15,6 +15,8 @@ pub enum Term {
     App(Box<Term>, Box<Term>),
 }
 
+use Term::*;
+
 impl Term {
     /// Checks whether the term is complete given a set of bound variable names.
     ///
@@ -54,16 +56,14 @@ impl Term {
     /// assert!(!app("x", abs("y", "z")).is_complete_with(ctx));
     /// ```
     pub fn is_complete_with(&self, ctx: HashSet<String>) -> bool {
-        //todo!()
-
         match self {
-            Term::Var(name) => ctx.contains(name),
-            Term::Abs { var, body } => {
+            Var(name) => ctx.contains(name),
+            Abs { var, body } => {
                 let mut new_ctx = ctx.clone();
                 new_ctx.insert(var.clone());
                 body.is_complete_with(new_ctx)
             }
-            Term::App(t1, t2) => t1.is_complete_with(ctx.clone()) && t2.is_complete_with(ctx),
+            App(t1, t2) => t1.is_complete_with(ctx.clone()) && t2.is_complete_with(ctx),
         }
     }
 
@@ -95,22 +95,20 @@ impl Term {
     /// assert!(!app(abs("x", "x"), abs("y", "x")).is_complete());
     /// ```
     pub fn is_complete(&self) -> bool {
-        //todo!()
-
         self.is_complete_with(HashSet::new())
     }
 
     //My other functions
     pub fn subst(self, x: &str, v: Self) -> Self {
         match self {
-            Term::Var(name) => {
+            Var(name) => {
                 if name == x {
                     v
                 } else {
                     Term::Var(name)
                 }
             }
-            Term::Abs { var, body } => {
+            Abs { var, body } => {
                 if var == x {
                     Term::Abs { var, body }
                 } else {
@@ -120,23 +118,21 @@ impl Term {
                     }
                 }
             }
-            Term::App(t1, t2) => {
-                Term::App(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v)))
-            }
+            App(t1, t2) => Term::App(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
         }
     }
 
     pub fn free(&self, x: &str) -> bool {
         match self {
-            Term::Var(v) => v == x,
-            Term::Abs { var, body } => {
+            Var(v) => v == x,
+            Abs { var, body } => {
                 if var == x {
                     false
                 } else {
                     body.free(x)
                 }
             }
-            Term::App(t1, t2) => t1.free(x) || t2.free(x),
+            App(t1, t2) => t1.free(x) || t2.free(x),
         }
     }
 }
