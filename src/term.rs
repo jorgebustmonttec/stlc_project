@@ -18,6 +18,57 @@ pub enum Term {
 use Term::*;
 
 impl Term {
+    // 'Free variables' functions
+
+    pub fn free(&self, x: &str) -> bool {
+        match self {
+            Var(v) => v == x,
+            Abs { var, body } => {
+                if var == x {
+                    false
+                } else {
+                    body.free(x)
+                }
+            }
+            App(t1, t2) => t1.free(x) || t2.free(x),
+        }
+    }
+
+    // 'Substitution' functions
+
+    /// Performs substitution of a variable `x` with a given term `v`.
+    ///
+    /// # Incomplete Terms
+    ///
+    /// If `v` contains free variables, the function's behavior remains well-defined
+    /// but the correctness of the result is not guaranteed, i.e. this function can assume `v`
+    /// is a complete term, but must not panic even if it's not.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use application::term::util::*;
+    /// assert_eq!(var("x").subst("x", var("y")), var("y"));
+    /// ```
+    ///
+    /// ```
+    /// # use application::term::util::*;
+    /// assert_eq!(abs("x", "x").subst("x", var("y")), abs("x", "x"));
+    /// ```
+    pub fn subst(self, x: &str, v: Self) -> Self {
+        match self {
+            Var(y) if y == x => v,
+            Abs { var, body } if var != x => Abs {
+                var,
+                body: Box::new(body.subst(x, v)),
+            },
+            App(t1, t2) => App(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            _ => self,
+        }
+    }
+
+    // 'Term completeness' functions
+
     /// Checks whether the term is complete given a set of bound variable names.
     ///
     /// A term is considered *complete* if every variable that occurs in the term
@@ -98,41 +149,47 @@ impl Term {
         self.is_complete_with(HashSet::new())
     }
 
-    //My other functions
-    pub fn subst(self, x: &str, v: Self) -> Self {
-        match self {
-            Var(name) => {
-                if name == x {
-                    v
-                } else {
-                    Term::Var(name)
-                }
-            }
-            Abs { var, body } => {
-                if var == x {
-                    Term::Abs { var, body }
-                } else {
-                    Term::Abs {
-                        var,
-                        body: Box::new(body.subst(x, v)),
-                    }
-                }
-            }
-            App(t1, t2) => Term::App(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
-        }
+    // 'Beta reduction step' functions
+
+    /// Performs one step of 𝛽-reduction on the term.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use application::term::util::*;
+    /// assert_eq!(app(id(), id()).step(), id());
+    /// assert_eq!(app(tru(), app(id(), fals())).step(), app(tru(), fals()));
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// This function will panic in the following cases:
+    /// - If trying to step a variable term.
+    /// - If trying to step a term that is already a value.
+    ///
+    /// The error messages must include "cannot evaluate a variable" and "cannot step a value" respectively.
+    ///
+    /// ```should_panic
+    /// # use application::term::util::*;
+    /// id().step();
+    /// ```
+    pub fn step(self) -> Self {
+        todo!()
     }
 
-    pub fn free(&self, x: &str) -> bool {
-        match self {
-            Var(v) => v == x,
-            Abs { var, body } => {
-                if var == x {
-                    false
-                } else {
-                    body.free(x)
-                }
-            }
-            App(t1, t2) => t1.free(x) || t2.free(x),
-        }
+    /// Determines whether the term is a value.
+    ///
+    /// In lambda calculus, only abstractions are considered values.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use application::term::util::*;
+    /// assert!(abs("x", "x").is_value());
+    /// assert!(!var("x").is_value());
+    /// assert!(!app("x", "y").is_value());
+    /// ```
+    pub fn is_value(&self) -> bool {
+        todo!()
     }
 }
