@@ -53,42 +53,31 @@ use stlc_project::term::{Term, parse::parse_term};
 
 use rustyline::{DefaultEditor, error::ReadlineError};
 
-fn process(line: &str) -> Result<Term, Box<dyn std::error::Error>> {
+fn process(line: &str) -> Result<(), Box<dyn std::error::Error>> {
     let (_, t) = all_consuming(parse_term)
         .parse(line)
         .map_err(|e| e.to_string())?;
-    print!("      {t}\n  --> ");
-    let u = t.step();
+    print!("       {t}\n  -->* ");
+    let u = t.multistep();
     println!("{u}");
-    Ok(u)
+    Ok(())
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rl = DefaultEditor::new()?;
-    let mut t = None::<Term>;
     println!("Enter :q or Ctrl+C to quit.");
-    println!("Entering an empty line steps the previous result.");
 
     loop {
         let readline = rl.readline("> ");
         match readline {
             Ok(line) => {
-                if line.len() == 0 {
-                    if let Some(ti) = t {
-                        let u = ti.step();
-                        println!("  --> {u}");
-                        t = Some(u);
-                    }
-                } else {
-                    rl.add_history_entry(line.as_str())?;
-                    if line.trim() == ":q" {
-                        break;
-                    }
+                rl.add_history_entry(line.as_str())?;
+                if line.trim() == ":q" {
+                    break;
+                }
 
-                    match process(&line) {
-                        Ok(u) => t = Some(u),
-                        Err(e) => eprintln!("{e}"),
-                    }
+                if let Err(e) = process(&line) {
+                    eprintln!("{e}");
                 }
             }
             Err(ReadlineError::Interrupted | ReadlineError::Eof) => {

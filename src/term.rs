@@ -13,6 +13,13 @@ pub enum Term {
     Abs { var: String, body: Box<Term> },
     /// An application of one term to another.
     App(Box<Term>, Box<Term>),
+    /// A let expression assigning a variable `var` to a value `val_t` in `body`.
+    /// It is effectively just a subtitution.
+    Let {
+        var: String,
+        val_t: Box<Term>,
+        body: Box<Term>,
+    },
 }
 
 use Term::*;
@@ -31,6 +38,7 @@ impl Term {
                 }
             }
             App(t1, t2) => t1.free(x) || t2.free(x),
+            _ => todo!(),
         }
     }
 
@@ -41,19 +49,47 @@ impl Term {
     /// # Incomplete Terms
     ///
     /// If `v` contains free variables, the function's behavior remains well-defined
-    /// but the correctness of the result is not guaranteed, i.e. this function can assume `v`
-    /// is a complete term, but must not panic even if it's not.
+    /// but the correctness of the result is not guaranteed (i.e. this function assumes that `v`
+    /// is complete), though it must not panic even if it is not.
     ///
     /// # Examples
     ///
-    /// ```
+    /// **Variable substitution:**
+    /// ```rust
     /// # use application::term::util::*;
     /// assert_eq!(var("x").subst("x", var("y")), var("y"));
     /// ```
     ///
-    /// ```
+    /// **Inside an abstraction (bound variable remains unchanged):**
+    /// ```rust
     /// # use application::term::util::*;
-    /// assert_eq!(abs("x", "x").subst("x", var("y")), abs("x", "x"));
+    /// assert_eq!(abs("x", var("x")).subst("x", var("y")), abs("x", var("x")));
+    /// ```
+    ///
+    /// **Using a let expression:**
+    /// In the let expression below, the bound variable is `"y"`. Substituting `"x"` will
+    /// affect both the value part and the body.
+    /// ```rust
+    /// # use application::term::util::*;
+    /// let let_expr = letin("y", var("x"), app(var("x"), var("y")));
+    /// let expected  = letin("y", var("z"), app(var("z"), var("y")));
+    /// assert_eq!(let_expr.subst("x", var("z")), expected);
+    /// ```
+    ///
+    /// Substituting inside the body of a let should only substitute if the var is different.
+    /// - `[x ↦ id](let x = id in x) = let x = id in x`, i.e. should be invariant, as `x` is bound by the let.
+    /// - `[x ↦ id](let x = x in x) = let x = id in x`, i.e. `val_t` is substituted, as it's not quantified by the let.
+    ///
+    /// ```rust
+    /// # use application::term::util::*;
+    /// assert_eq!(
+    ///     letin("x", id(), var("x")).subst("x", id()),
+    ///     letin("x", id(), var("x"))
+    /// );
+    /// assert_eq!(
+    ///     letin("x", var("x"), var("x")).subst("x", id()),
+    ///     letin("x", id(), var("x"))
+    /// );
     /// ```
     pub fn subst(self, x: &str, v: Self) -> Self {
         match self {
@@ -63,6 +99,16 @@ impl Term {
                 body: Box::new(body.subst(x, v)),
             },
             App(t1, t2) => App(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Let { var, val_t, body } if var != x => Let {
+                var,
+                val_t: Box::new(val_t.subst(x, v.clone())),
+                body: Box::new(body.subst(x, v)),
+            },
+            Let { var, val_t, body } => Let {
+                var,
+                val_t: Box::new(val_t.subst(x, v)),
+                body, // Do not substitute in the body if the variable matches
+            },
             _ => self,
         }
     }
@@ -115,6 +161,7 @@ impl Term {
                 body.is_complete_with(new_ctx)
             }
             App(t1, t2) => t1.is_complete_with(ctx.clone()) && t2.is_complete_with(ctx),
+            _ => todo!(),
         }
     }
 
@@ -153,12 +200,32 @@ impl Term {
 
     /// Performs one step of 𝛽-reduction on the term.
     ///
+    /// This function applies one reduction step according to the lambda calculus rules.
+    ///
     /// # Examples
     ///
-    /// ```
+    /// **Application reduction:**
+    /// ```rust
     /// # use application::term::util::*;
+    /// // (λx. x) applied to (λy. y) reduces to (λy. y)
     /// assert_eq!(app(id(), id()).step(), id());
+    /// ```
+    ///
+    /// **Nested reduction:**
+    /// ```rust
+    /// # use application::term::util::*;
+    /// // In the term app(tru(), app(id(), fals())), the inner application reduces first.
     /// assert_eq!(app(tru(), app(id(), fals())).step(), app(tru(), fals()));
+    /// ```
+    ///
+    /// **Using a let expression:**
+    /// When the bound value in a let expression is already a value,
+    /// a single step reduces it by substituting the bound variable in the body.
+    /// ```rust
+    /// # use application::term::util::*;
+    /// let let_expr = letin("x", tru(), var("x"));
+    /// // This reduces by replacing "x" in the body with tru(), resulting in tru().
+    /// assert_eq!(let_expr.step(), tru());
     /// ```
     ///
     /// # Errors
@@ -178,33 +245,54 @@ impl Term {
             Var(y) => panic!("cannot evaluate a variable: {y}"),
             Abs { .. } => panic!("cannot step a value"),
             App(t1, t2) => match *t1 {
-                // AppAbs: applying an abstraction to a value results in a substitution
                 Abs { var, body } if t2.is_value() => body.subst(&var, *t2),
-                // App2: if t1 is a value, reduce t2 by one step
                 t1 if t1.is_value() => App(Box::new(t1), Box::new(t2.step())),
-                // App1: reduce t1 by one step
                 t1 => App(Box::new(t1.step()), t2),
             },
+            Let { var, val_t, body } if !val_t.is_value() => Let {
+                var,
+                val_t: Box::new(val_t.step()),
+                body,
+            },
+            Let { var, val_t, body } => body.subst(&var, *val_t),
         }
     }
 
     /// Determines whether the term is a value.
     ///
-    /// In lambda calculus, only abstractions are considered values.
+    /// In our lambda calculus, only lambda abstractions (i.e. `Abs`) are considered values.
+    /// Let expressions, applications, and variables are not values.
     ///
     /// # Examples
     ///
-    /// ```
+    /// **Abstraction is a value:**
+    /// ```rust
     /// # use application::term::util::*;
-    /// assert!(abs("x", "x").is_value());
+    /// assert!(abs("x", var("x")).is_value());
+    /// ```
+    ///
+    /// **Variable is not a value:**
+    /// ```rust
+    /// # use application::term::util::*;
     /// assert!(!var("x").is_value());
-    /// assert!(!app("x", "y").is_value());
+    /// ```
+    ///
+    /// **Application is not a value:**
+    /// ```rust
+    /// # use application::term::util::*;
+    /// assert!(!app(id(), id()).is_value());
+    /// ```
+    ///
+    /// **Let expression is not a value:**
+    /// ```rust
+    /// # use application::term::util::*;
+    /// let let_expr = letin("x", tru(), var("x"));
+    /// assert!(!let_expr.is_value());
     /// ```
     pub fn is_value(&self) -> bool {
         match self {
             Abs { .. } => true,
-            Var(_) | App(_, _) => false,
-            _ => todo!(),
+            Var(_) | App(_, _) | Let { .. } => false,
         }
     }
 
@@ -241,13 +329,10 @@ impl Term {
     /// let result = term.multistep();
     /// assert_eq!(result, abs("y", fals()));
     /// ```
-    pub fn multistep(self) -> Self {
-        //todo!()
-
-        let mut term = self;
-        while !term.is_value() {
-            term = term.step();
+    pub fn multistep(mut self) -> Self {
+        while !self.is_value() {
+            self = self.step();
         }
-        term
+        self
     }
 }

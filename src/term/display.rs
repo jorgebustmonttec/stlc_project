@@ -22,6 +22,7 @@ impl std::fmt::Display for Term {
                 // Otherwise add parens
                 _ => write!(f, "({term1}) ({term2})"),
             },
+            Let { var, val_t, body } => write!(f, "let {var} = {val_t} in {body}"),
         }
     }
 }
