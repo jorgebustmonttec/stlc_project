@@ -1,54 +1,49 @@
 /*
 
-Multi-Step
+Let expressions
 
-Implement the multistep function as described in the material (Definition 6.4.3).
-
-
+Implement Let expressions to the language as described in the material.
 
 
-As before, you have two options for getting started:
+The following change is needed to Term:
+enum Term {
+    // ..
 
-Use your solution to the previous exercise (Substitution or Complete) as the starting point, or
-use the provided starter code, which is the model solution from the previous exercise with.
-The starter code comes with the following files:
-
-term.rs: contains the definition for Term and its methods.
-lib.rs: makes the term.rs module part of the library crate.
-main.rs: the REPL for testing and experimenting.
-term/display.rs: pretty printer for Term.
-term/util.rs: utilities for creating new terms.
-term/parse.rs: parser for terms.
-Your task is to implement the multistep method according to the material.
-
-impl Term {
-    pub fn multistep(self) -> Self {
-        todo!()
-    }
+<pre><code>/// A let expression assigning a variable `var` to a value `val_t` in `body`.
+/// It is effectively just a subtitution.
+Let {
+    var: String,
+    val_t: Box&lt;Term&gt;,
+    body: Box&lt;Term&gt;,
+},
+</code>
 }
-The grader only tests the multistep method.
+
+The files in the term directory also have changed, so make sure to copy them to your version as well.
+The grader only tests the is_value, subst, step and multistep methods and does not test parsing or utilities.
 
 
 
 
-To start the REPL, run cargo run. Here is a sample (with Church encoding of pairs) from how the REPL works:
+Here is a sample (with Church encoding of pairs) from the REPL:
 
-# This is the church encoding of the pair of functions (𝜆 x. x, 𝜆 y. y)
-> (fun x, fun y, fun z, z x y) (fun x, x) (fun y, y)
-       ((𝜆 x. 𝜆 y. 𝜆 z. (z x) y) (𝜆 x. x)) (𝜆 y. y)
-  -->* 𝜆 z. (z (𝜆 x. x)) (𝜆 y. y)
-# This gets the first value from the pair
-> (fun p, p (fun x, fun y, x)) ((fun x, fun y, fun z, z x y) (fun x, x) (fun y, y))
-       (𝜆 p. p (𝜆 x. 𝜆 y. x)) (((𝜆 x. 𝜆 y. 𝜆 z. (z x) y) (𝜆 x. x)) (𝜆 y. y))
+> let x = (fun x, x) in x x
+       let x = 𝜆 x. x in x x
   -->* 𝜆 x. x
-# This gets the second value from the pair
-> (fun p, p (fun x, fun y, y)) ((fun x, fun y, fun z, z x y) (fun x, x) (fun y, y))
-       (𝜆 p. p (𝜆 x. 𝜆 y. y)) (((𝜆 x. 𝜆 y. 𝜆 z. (z x) y) (𝜆 x. x)) (𝜆 y. y))
+# Shadowing works as expected: the "closer" x is used
+> let x = (fun z, z) in let x = (fun w, w) in x
+     let x = 𝜆 z. z in let x = 𝜆 w. w in x
+-->* 𝜆 w. w
+# Defines church encoded pair, fst and snd, and evaluates fst (pair (fun x, x) (fun y, y))
+> let pair = (fun x, fun y, fun z, z x y) in let fst = (fun p, p (fun x, fun y, x)) in let snd = (fun p, p (fun x, fun y, y)) in fst (pair (fun x, x) (fun y, y))
+       let pair = 𝜆 x. 𝜆 y. 𝜆 z. (z x) y in let fst = 𝜆 p. p (𝜆 x. 𝜆 y. x) in let snd = 𝜆 p. p (𝜆 x. 𝜆 y. y) in fst ((pair (𝜆 x. x)) (𝜆 y. y))
+  -->* 𝜆 x. x
+# Defines church encoded pair, fst and snd, and evaluates snd (pair (fun x, x) (fun y, y))
+> let pair = (fun x, fun y, fun z, z x y) in let fst = (fun p, p (fun x, fun y, x)) in let snd = (fun p, p (fun x, fun y, y)) in snd (pair (fun x, x) (fun y, y))
+       let pair = 𝜆 x. 𝜆 y. 𝜆 z. (z x) y in let fst = 𝜆 p. p (𝜆 x. 𝜆 y. x) in let snd = 𝜆 p. p (𝜆 x. 𝜆 y. y) in snd ((pair (𝜆 x. x)) (𝜆 y. y))
   -->* 𝜆 y. y
-# The Y combinator applied to itself leads to infinite recursion
-> (fun x, x x) (fun x, x x)
-       (𝜆 x. x x) (𝜆 x. x x)
-Feel free to try out different lambda terms from Church encoding WikiPedia page.
+For extra challenge, try adding a way to assign terms to "global" variables in the REPL.
+
 
 */
 
