@@ -1,9 +1,8 @@
 /*
 
-Beta Reduction Step
-0 / 35 points
+Multi-Step
 
-In this exercise, you will implement beta reduction. This is a significant step in the project. Make sure you understand the material well enough first before implementing the step function.
+Implement the multistep function as described in the material (Definition 6.4.3).
 
 
 
@@ -20,36 +19,36 @@ main.rs: the REPL for testing and experimenting.
 term/display.rs: pretty printer for Term.
 term/util.rs: utilities for creating new terms.
 term/parse.rs: parser for terms.
-Your task is to implement the step and is_value methods in term.rs according to the material. Their type signatures are:
+Your task is to implement the multistep method according to the material.
 
 impl Term {
-    pub fn step(self) -> Self {
-        todo!()
-    }
-
-    pub fn is_value(&self) -> bool {
+    pub fn multistep(self) -> Self {
         todo!()
     }
 }
-See Definitions 6.4.1 and 6.4.2 for the exact specification. The grader only tests the step and is_value methods.
+The grader only tests the multistep method.
 
 
 
 
-To start the REPL, run cargo run. Here is a sample from how the REPL works:
+To start the REPL, run cargo run. Here is a sample (with Church encoding of pairs) from how the REPL works:
 
-Enter :q or Ctrl+C to quit.
-Entering an empty line steps the previous result.
-> (fun x, fun y, x) (fun x, fun y, y) (fun x, x)
-      ((𝜆 x. 𝜆 y. x) (𝜆 x. 𝜆 y. y)) (𝜆 x. x)
-  --> (𝜆 y. 𝜆 x. 𝜆 y. y) (𝜆 x. x)
->
-  --> 𝜆 x. 𝜆 y. y
-> (fun x, fun y, x) (fun x, fun y, y) (fun x, fun y, x)
-      ((𝜆 x. 𝜆 y. x) (𝜆 x. 𝜆 y. y)) (𝜆 x. 𝜆 y. x)
-  --> (𝜆 y. 𝜆 x. 𝜆 y. y) (𝜆 x. 𝜆 y. x)
->
-  --> 𝜆 x. 𝜆 y. y
+# This is the church encoding of the pair of functions (𝜆 x. x, 𝜆 y. y)
+> (fun x, fun y, fun z, z x y) (fun x, x) (fun y, y)
+       ((𝜆 x. 𝜆 y. 𝜆 z. (z x) y) (𝜆 x. x)) (𝜆 y. y)
+  -->* 𝜆 z. (z (𝜆 x. x)) (𝜆 y. y)
+# This gets the first value from the pair
+> (fun p, p (fun x, fun y, x)) ((fun x, fun y, fun z, z x y) (fun x, x) (fun y, y))
+       (𝜆 p. p (𝜆 x. 𝜆 y. x)) (((𝜆 x. 𝜆 y. 𝜆 z. (z x) y) (𝜆 x. x)) (𝜆 y. y))
+  -->* 𝜆 x. x
+# This gets the second value from the pair
+> (fun p, p (fun x, fun y, y)) ((fun x, fun y, fun z, z x y) (fun x, x) (fun y, y))
+       (𝜆 p. p (𝜆 x. 𝜆 y. y)) (((𝜆 x. 𝜆 y. 𝜆 z. (z x) y) (𝜆 x. x)) (𝜆 y. y))
+  -->* 𝜆 y. y
+# The Y combinator applied to itself leads to infinite recursion
+> (fun x, x x) (fun x, x x)
+       (𝜆 x. x x) (𝜆 x. x x)
+Feel free to try out different lambda terms from Church encoding WikiPedia page.
 
 */
 
