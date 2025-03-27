@@ -1,11 +1,11 @@
 use nom::{
+    IResult, Parser,
     branch::alt,
     bytes::complete::tag,
     character::complete::{alpha1, alphanumeric0, char, multispace0, multispace1},
     combinator::verify,
     multi::fold_many0,
     sequence::delimited,
-    IResult, Parser,
 };
 
 use super::Term::{self, *};

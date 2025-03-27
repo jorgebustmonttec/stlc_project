@@ -174,7 +174,35 @@ impl Term {
     /// id().step();
     /// ```
     pub fn step(self) -> Self {
-        todo!()
+        match self {
+            // Panic if trying to step a variable
+            Var(_) => panic!("cannot evaluate a variable"),
+
+            // Panic if trying to step a value
+            term if term.is_value() => panic!("cannot step a value"),
+
+            // Beta reduction: (λx. body) arg -> body[x := arg]
+            App(func, arg) => {
+                if let Abs { var, body } = *func {
+                    if arg.is_value() {
+                        // Apply substitution only if the argument is a value
+                        body.subst(&var, *arg)
+                    } else {
+                        // Step the argument if it's not a value
+                        App(Box::new(Abs { var, body }), Box::new(arg.step()))
+                    }
+                } else if !func.is_value() {
+                    // Step the function part if it's not a value
+                    App(Box::new(func.step()), arg)
+                } else {
+                    // If neither can be stepped, return the application itself
+                    App(func, arg)
+                }
+            }
+
+            // Base case: return the term itself if it cannot be reduced
+            _ => self,
+        }
     }
 
     /// Determines whether the term is a value.
@@ -190,6 +218,6 @@ impl Term {
     /// assert!(!app("x", "y").is_value());
     /// ```
     pub fn is_value(&self) -> bool {
-        todo!()
+        matches!(self, Abs { .. })
     }
 }
