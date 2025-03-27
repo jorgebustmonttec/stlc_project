@@ -175,33 +175,16 @@ impl Term {
     /// ```
     pub fn step(self) -> Self {
         match self {
-            // Panic if trying to step a variable
-            Var(_) => panic!("cannot evaluate a variable"),
-
-            // Panic if trying to step a value
-            term if term.is_value() => panic!("cannot step a value"),
-
-            // Beta reduction: (λx. body) arg -> body[x := arg]
-            App(func, arg) => {
-                if let Abs { var, body } = *func {
-                    if arg.is_value() {
-                        // Apply substitution only if the argument is a value
-                        body.subst(&var, *arg)
-                    } else {
-                        // Step the argument if it's not a value
-                        App(Box::new(Abs { var, body }), Box::new(arg.step()))
-                    }
-                } else if !func.is_value() {
-                    // Step the function part if it's not a value
-                    App(Box::new(func.step()), arg)
-                } else {
-                    // If neither can be stepped, return the application itself
-                    App(func, arg)
-                }
-            }
-
-            // Base case: return the term itself if it cannot be reduced
-            _ => self,
+            Var(y) => panic!("cannot evaluate a variable: {y}"),
+            Abs { .. } => panic!("cannot step a value"),
+            App(t1, t2) => match *t1 {
+                // AppAbs: applying an abstraction to a value results in a substitution
+                Abs { var, body } if t2.is_value() => body.subst(&var, *t2),
+                // App2: if t1 is a value, reduce t2 by one step
+                t1 if t1.is_value() => App(Box::new(t1), Box::new(t2.step())),
+                // App1: reduce t1 by one step
+                t1 => App(Box::new(t1.step()), t2),
+            },
         }
     }
 
@@ -218,6 +201,53 @@ impl Term {
     /// assert!(!app("x", "y").is_value());
     /// ```
     pub fn is_value(&self) -> bool {
-        matches!(self, Abs { .. })
+        match self {
+            Abs { .. } => true,
+            Var(_) | App(_, _) => false,
+            _ => todo!(),
+        }
+    }
+
+    // 'multi-step' functions
+
+    /// Performs repeated 𝛽-reduction steps until the term reaches a value.
+    ///
+    /// This method implements a multi-step evaluation strategy where the term is continuously
+    /// reduced using the single-step reduction defined in [`Self::step`] until it becomes a value,
+    /// as determined by [`Self::is_value`]. In our lambda calculus, only abstractions (i.e., lambda
+    /// functions) are considered values.
+    ///
+    /// # Minor Considerations
+    ///
+    /// - This method will run indefinitely if the term diverges during evaluation.
+    ///   It is the caller's responsibility to ensure that the term reduces to a value.
+    /// - **Evaluation Strategy:** This method applies reductions in a loop (a form of big-step
+    ///   evaluation) rather than producing an explicit sequence of intermediate terms.
+    ///
+    /// # Examples
+    ///
+    /// Evaluating the identity function applied to itself:
+    /// ```
+    /// # use application::term::util::*;
+    /// let term = app(id(), id());
+    /// let result = term.multistep();
+    /// assert_eq!(result, id());
+    /// ```
+    ///
+    /// Evaluating a nested application:
+    /// ```
+    /// # use application::term::util::*;
+    /// let term = app(tru(), app(id(), fals()));
+    /// let result = term.multistep();
+    /// assert_eq!(result, abs("y", fals()));
+    /// ```
+    pub fn multistep(self) -> Self {
+        //todo!()
+
+        let mut term = self;
+        while !term.is_value() {
+            term = term.step();
+        }
+        term
     }
 }
