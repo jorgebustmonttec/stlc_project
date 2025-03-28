@@ -36,16 +36,6 @@ pub fn letin(var: impl ToString, val_t: impl Into<Box<Term>>, body: impl Into<Bo
         body: body.into(),
     }
 }
-pub fn ite(
-    cond: impl Into<Box<Term>>,
-    if_true: impl Into<Box<Term>>,
-    if_false: impl Into<Box<Term>>,
-) -> Term {
-    Ite {
-        cond: cond.into(),
-        if_true: if_true.into(),
-        if_false: if_false.into(),
-    }
 
 pub fn add(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
     Add(t1.into(), t2.into())
