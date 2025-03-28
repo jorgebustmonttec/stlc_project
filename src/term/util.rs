@@ -1,4 +1,5 @@
 pub use super::Term::{self, *};
+pub use crate::r#type::util::*;
 
 pub fn var(name: impl ToString) -> Term {
     Var(name.to_string())
@@ -11,9 +12,10 @@ impl From<&str> for Box<Term> {
     }
 }
 
-pub fn abs(var: impl ToString, body: impl Into<Box<Term>>) -> Term {
+pub fn abs(var: impl ToString, ty: impl Into<Type>, body: impl Into<Box<Term>>) -> Term {
     Abs {
         var: var.to_string(),
+        ty: ty.into(),
         body: body.into(),
     }
 }
@@ -27,12 +29,21 @@ pub fn letin(var: impl ToString, val_t: impl Into<Box<Term>>, body: impl Into<Bo
         body: body.into(),
     }
 }
-pub fn id() -> Term {
-    abs("x", "x")
+pub fn ite(
+    cond: impl Into<Box<Term>>,
+    if_true: impl Into<Box<Term>>,
+    if_false: impl Into<Box<Term>>,
+) -> Term {
+    Ite {
+        cond: cond.into(),
+        if_true: if_true.into(),
+        if_false: if_false.into(),
+    }
 }
-pub fn tru() -> Term {
-    abs("x", abs("y", "x"))
+
+pub fn id2() -> Term {
+    abs("x", Boolean, "x")
 }
-pub fn fals() -> Term {
-    abs("x", abs("y", "y"))
+pub fn id22() -> Term {
+    abs("x", arrow(Boolean, Boolean), "x")
 }

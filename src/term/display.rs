@@ -5,24 +5,30 @@ impl std::fmt::Display for Term {
         use Term::*;
         match self {
             Var(x) => write!(f, "{x}"),
-            Abs { var, body } => write!(f, "𝜆 {var}. {body}"),
+            Abs { var, ty, body } => write!(f, "𝜆 {var} : {ty}. {body}"),
             App(term1, term2) => match (&**term1, &**term2) {
-                (term1 @ Var(_), term2 @ Var(_)) => {
-                    // Applying variables doesn't need parens
+                (term1 @ (Var(_) | True | False), term2 @ (Var(_) | True | False)) => {
                     write!(f, "{term1} {term2}")
                 }
                 (term1 @ Var(_), term2) => {
-                    // Applying a variable on the left to anything
                     write!(f, "{term1} ({term2})")
                 }
-                (term1, term2 @ Var(_)) => {
-                    // Applying anything to a variable
+                (term1, term2 @ (Var(_) | True | False)) => {
                     write!(f, "({term1}) {term2}")
                 }
                 // Otherwise add parens
                 _ => write!(f, "({term1}) ({term2})"),
             },
+
             Let { var, val_t, body } => write!(f, "let {var} = {val_t} in {body}"),
+
+            True => write!(f, "True"),
+            False => write!(f, "False"),
+            Ite {
+                cond,
+                if_true,
+                if_false,
+            } => write!(f, "if {cond} then {if_true} else {if_false}"),
         }
     }
 }

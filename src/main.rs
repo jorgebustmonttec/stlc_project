@@ -1,55 +1,85 @@
 /*
 
-Let expressions
+STLC + 2
+0 / 40 points
 
-Implement Let expressions to the language as described in the material.
+There are going to be a few changes to the project structure. To keep things organized, the starter code is split into more files. Notably substitution and evaluation related code are in their own files.
 
 
-The following change is needed to Term:
+
+
+The starter code is organized as follows:
+
+term.rs: contains the definition for enum Term and the is_value method.
+term/subst.rs: contains the subst method for core STLC terms.
+term/step.rs: contains the step and multistep methods for core STLC terms.
+term/parse.rs: contains the parsing code for terms.
+term/display.rs: contains the pretty printer for terms.
+term/util.rs: contains some utilities for working with terms.
+type.rs: contains the definition for enum Type and enum TypeError.
+type/check.rs: contains the type checking code for core STLC.
+type/parse.rs: contains the parsing code for types.
+type/display.rs: contains the pretty printer for types.
+type/util.rs: contains some utilities for working with types.
+parse.rs: contains a few common parsing utilities.
+You are free to organize your code in any way you wish, however we recommend using the same structure as in the starter code.
+Exercise task
+Your task is to implement the dynamics and statics of booleans on top of the core STLC (with let expressions), whose implementation you will find in the starter code. Either use the starter code as the starting point or make the following changes to your version of the project:
+
+Extend Term with boolean values and if-then-else:
 enum Term {
     // ..
 
-<pre><code>/// A let expression assigning a variable `var` to a value `val_t` in `body`.
-/// It is effectively just a subtitution.
-Let {
-    var: String,
-    val_t: Box&lt;Term&gt;,
-    body: Box&lt;Term&gt;,
+<pre><code>/// A true boolean value
+True,
+/// A false boolean value
+False,
+/// If-then-else
+Ite {
+    cond: Box&lt;Term&gt;,
+    if_true: Box&lt;Term&gt;,
+    if_false: Box&lt;Term&gt;,
 },
 </code>
 }
 
-The files in the term directory also have changed, so make sure to copy them to your version as well.
-The grader only tests the is_value, subst, step and multistep methods and does not test parsing or utilities.
+Copy the type checking code from the starter and the module pub mod r#type; into your lib.rs.
+Copy the parsing code from parse.rs and pretty printer code display.rs from the respective directories for terms and types.
+Refactor the substitution and evaluation methods into their own files (recommended but not necessary).
+The grader only tests is_value, subst, step, multistep and type_check and does not test parsing or utilities.
 
 
 
 
-Here is a sample (with Church encoding of pairs) from the REPL:
+Here is a sample from the REPL:
 
-> let x = (fun x, x) in x x
-       let x = 𝜆 x. x in x x
-  -->* 𝜆 x. x
-# Shadowing works as expected: the "closer" x is used
-> let x = (fun z, z) in let x = (fun w, w) in x
-     let x = 𝜆 z. z in let x = 𝜆 w. w in x
--->* 𝜆 w. w
-# Defines church encoded pair, fst and snd, and evaluates fst (pair (fun x, x) (fun y, y))
-> let pair = (fun x, fun y, fun z, z x y) in let fst = (fun p, p (fun x, fun y, x)) in let snd = (fun p, p (fun x, fun y, y)) in fst (pair (fun x, x) (fun y, y))
-       let pair = 𝜆 x. 𝜆 y. 𝜆 z. (z x) y in let fst = 𝜆 p. p (𝜆 x. 𝜆 y. x) in let snd = 𝜆 p. p (𝜆 x. 𝜆 y. y) in fst ((pair (𝜆 x. x)) (𝜆 y. y))
-  -->* 𝜆 x. x
-# Defines church encoded pair, fst and snd, and evaluates snd (pair (fun x, x) (fun y, y))
-> let pair = (fun x, fun y, fun z, z x y) in let fst = (fun p, p (fun x, fun y, x)) in let snd = (fun p, p (fun x, fun y, y)) in snd (pair (fun x, x) (fun y, y))
-       let pair = 𝜆 x. 𝜆 y. 𝜆 z. (z x) y in let fst = 𝜆 p. p (𝜆 x. 𝜆 y. x) in let snd = 𝜆 p. p (𝜆 x. 𝜆 y. y) in snd ((pair (𝜆 x. x)) (𝜆 y. y))
-  -->* 𝜆 y. y
-For extra challenge, try adding a way to assign terms to "global" variables in the REPL.
+> True
+True :: 𝟚
+> let not = (fun t : Boolean, if t then False else True) in not
+𝜆 t : 𝟚. if t then False else True :: 𝟚 → 𝟚
+> let not = (fun t : Boolean, if t then False else True) in not True
+False :: 𝟚
+> let not = (fun t : Boolean, if t then False else True) in not False
+True :: 𝟚
+> let not = (fun t : Boolean, if t then False else True) in fun x : Boolean -> Boolean -> Boolean, x True
+𝜆 x : 𝟚 → 𝟚 → 𝟚. x True :: (𝟚 → 𝟚 → 𝟚) → 𝟚 → 𝟚
+# And here are a few type errors
+> if True then True else x
+undefined variable: x
+> True False
+wrong app type left: Boolean
+> (fun x : Boolean -> Boolean, x) True
+wrong app type right: Boolean
+> if True then True else (fun x : Boolean, x)
+type error
+> let not = (fun t : Boolean, if t then False else True) in (fun x : (Boolean -> Boolean) -> Boolean, x not) not
+wrong app type right: Arrow(Boolean, Boolean)
 
 
 */
-
 use nom::Parser;
 use nom::combinator::all_consuming;
-use stlc_project::term::{Term, parse::parse_term};
+use stlc_project::term::parse::parse_term;
 
 use rustyline::{DefaultEditor, error::ReadlineError};
 
@@ -57,9 +87,8 @@ fn process(line: &str) -> Result<(), Box<dyn std::error::Error>> {
     let (_, t) = all_consuming(parse_term)
         .parse(line)
         .map_err(|e| e.to_string())?;
-    print!("       {t}\n  -->* ");
-    let u = t.multistep();
-    println!("{u}");
+    let ty = t.type_check()?;
+    println!("{} :: {ty}", t.multistep());
     Ok(())
 }
 
