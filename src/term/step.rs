@@ -57,7 +57,16 @@ impl Term {
                 cond,
                 if_true,
                 if_false,
-            } => todo!(),
+                /*} => todo!(),*/
+            } => match *cond {
+                True => *if_true,
+                False => *if_false,
+                _ => Ite {
+                    cond: Box::new(cond.step()),
+                    if_true: if_true.clone(),
+                    if_false: if_false.clone(),
+                },
+            },
             _ => panic!("cannot step a value"),
         }
     }

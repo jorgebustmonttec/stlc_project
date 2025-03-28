@@ -67,12 +67,24 @@ impl Term {
                 var,
                 val_t: Box::new(val_t.subst(x, v)),
             },
+            /*
 
             Ite {
                 cond,
                 if_true,
                 if_false,
             } => todo!(),
+
+             */
+            Ite {
+                cond,
+                if_true,
+                if_false,
+            } => Ite {
+                cond: Box::new(cond.subst(x, v.clone())),
+                if_true: Box::new(if_true.subst(x, v.clone())),
+                if_false: Box::new(if_false.subst(x, v)),
+            },
 
             _ => self,
         }
