@@ -57,6 +57,79 @@ impl Term {
                 }
                 Err(Fail)
             }
+            Int(_) => Ok(Integer),
+            Add(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == Integer && ty2 == Integer {
+                    return Ok(Integer);
+                }
+                Err(Fail)
+            }
+            Sub(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == Integer && ty2 == Integer {
+                    return Ok(Integer);
+                }
+                Err(Fail)
+            }
+            Mul(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == Integer && ty2 == Integer {
+                    return Ok(Integer);
+                }
+                Err(Fail)
+            }
+            Eq(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == ty2 {
+                    return Ok(Boolean);
+                }
+                Err(Fail)
+            }
+            Ne(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == ty2 {
+                    return Ok(Boolean);
+                }
+                Err(Fail)
+            }
+            Lt(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == Integer && ty2 == Integer {
+                    return Ok(Boolean);
+                }
+                Err(Fail)
+            }
+            Le(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == Integer && ty2 == Integer {
+                    return Ok(Boolean);
+                }
+                Err(Fail)
+            }
+            Gt(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == Integer && ty2 == Integer {
+                    return Ok(Boolean);
+                }
+                Err(Fail)
+            }
+            Ge(term1, term2) => {
+                let ty1 = term1.infer_type(ctx.clone())?;
+                let ty2 = term2.infer_type(ctx.clone())?;
+                if ty1 == Integer && ty2 == Integer {
+                    return Ok(Boolean);
+                }
+                Err(Fail)
+            }
 
             _ => todo!(),
         }

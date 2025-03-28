@@ -77,6 +77,7 @@ impl Term {
                 if_true: Box::new(if_true.subst(x, v.clone())),
                 if_false: Box::new(if_false.subst(x, v)),
             },
+            /*
 
             Add(t1, t2) => todo!(),
             Sub(t1, t2) => todo!(),
@@ -88,6 +89,19 @@ impl Term {
             Le(t1, t2) => todo!(),
             Gt(t1, t2) => todo!(),
             Ge(t1, t2) => todo!(),
+
+            */
+            Add(t1, t2) => Add(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Sub(t1, t2) => Sub(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Mul(t1, t2) => Mul(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+
+            Eq(t1, t2) => Eq(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Ne(t1, t2) => Ne(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Lt(t1, t2) => Lt(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Le(t1, t2) => Le(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Gt(t1, t2) => Gt(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Ge(t1, t2) => Ge(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+
             _ => self,
         }
     }

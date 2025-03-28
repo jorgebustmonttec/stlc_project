@@ -74,6 +74,7 @@ impl Term {
                 |cond| eval_ite(cond, if_true.clone(), if_false.clone()),
                 cond,
             ),
+            /*
 
             Add(t1, t2) => todo!(),
             Sub(t1, t2) => todo!(),
@@ -85,6 +86,125 @@ impl Term {
             Le(t1, t2) => todo!(),
             Gt(t1, t2) => todo!(),
             Ge(t1, t2) => todo!(),
+
+            */
+            Add(t1, t2) => step_op2(
+                Add,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => Int(i1 + i2),
+                    (other1, other2) => Add(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Sub(t1, t2) => step_op2(
+                Sub,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => Int(i1 - i2),
+                    (other1, other2) => Sub(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Mul(t1, t2) => step_op2(
+                Mul,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => Int(i1 * i2),
+                    (other1, other2) => Mul(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Eq(t1, t2) => step_op2(
+                Eq,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => {
+                        if i1 == i2 {
+                            True
+                        } else {
+                            False
+                        }
+                    }
+                    (other1, other2) => Eq(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Ne(t1, t2) => step_op2(
+                Ne,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => {
+                        if i1 != i2 {
+                            True
+                        } else {
+                            False
+                        }
+                    }
+                    (other1, other2) => Ne(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Lt(t1, t2) => step_op2(
+                Lt,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => {
+                        if i1 < i2 {
+                            True
+                        } else {
+                            False
+                        }
+                    }
+                    (other1, other2) => Lt(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Le(t1, t2) => step_op2(
+                Le,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => {
+                        if i1 <= i2 {
+                            True
+                        } else {
+                            False
+                        }
+                    }
+                    (other1, other2) => Le(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Gt(t1, t2) => step_op2(
+                Gt,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => {
+                        if i1 > i2 {
+                            True
+                        } else {
+                            False
+                        }
+                    }
+                    (other1, other2) => Gt(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
+            Ge(t1, t2) => step_op2(
+                Ge,
+                |t1, t2| match (*t1, *t2) {
+                    (Int(i1), Int(i2)) => {
+                        if i1 >= i2 {
+                            True
+                        } else {
+                            False
+                        }
+                    }
+                    (other1, other2) => Ge(Box::new(other1), Box::new(other2)),
+                },
+                t1,
+                t2,
+            ),
 
             _ => panic!("cannot step a value"),
         }
