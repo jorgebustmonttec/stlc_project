@@ -19,9 +19,7 @@ impl std::fmt::Display for Term {
                 // Otherwise add parens
                 _ => write!(f, "({term1}) ({term2})"),
             },
-
             Let { var, val_t, body } => write!(f, "let {var} = {val_t} in {body}"),
-
             True => write!(f, "True"),
             False => write!(f, "False"),
             Ite {
@@ -29,6 +27,17 @@ impl std::fmt::Display for Term {
                 if_true,
                 if_false,
             } => write!(f, "if {cond} then {if_true} else {if_false}"),
+
+            Int(n) => write!(f, "{n}"),
+            Add(term1, term2) => write!(f, "{term1} + {term2}"),
+            Sub(term1, term2) => write!(f, "{term1} - {term2}"),
+            Mul(term1, term2) => write!(f, "{term1} * {term2}"),
+            Eq(term1, term2) => write!(f, "{term1} == {term2}"),
+            Ne(term1, term2) => write!(f, "{term1} != {term2}"),
+            Lt(term1, term2) => write!(f, "{term1} < {term2}"),
+            Le(term1, term2) => write!(f, "{term1} <= {term2}"),
+            Gt(term1, term2) => write!(f, "{term1} > {term2}"),
+            Ge(term1, term2) => write!(f, "{term1} >= {term2}"),
         }
     }
 }

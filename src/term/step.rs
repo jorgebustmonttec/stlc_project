@@ -37,6 +37,14 @@ fn eval_let(val_t: Box<Term>, var: impl AsRef<str>, body: Box<Term>) -> Term {
     body.subst(var.as_ref(), *val_t)
 }
 
+fn eval_ite(cond: Box<Term>, if_true: Box<Term>, if_false: Box<Term>) -> Term {
+    match *cond {
+        True => *if_true,
+        False => *if_false,
+        _ => panic!("attempted to if-then-else with non boolean condition"),
+    }
+}
+
 impl Term {
     pub fn step(self) -> Self {
         match self {
@@ -57,16 +65,27 @@ impl Term {
                 cond,
                 if_true,
                 if_false,
-                /*} => todo!(),*/
-            } => match *cond {
-                True => *if_true,
-                False => *if_false,
-                _ => Ite {
-                    cond: Box::new(cond.step()),
+            } => step_op1(
+                |cond| Ite {
+                    cond,
                     if_true: if_true.clone(),
                     if_false: if_false.clone(),
                 },
-            },
+                |cond| eval_ite(cond, if_true.clone(), if_false.clone()),
+                cond,
+            ),
+
+            Add(t1, t2) => todo!(),
+            Sub(t1, t2) => todo!(),
+            Mul(t1, t2) => todo!(),
+
+            Eq(t1, t2) => todo!(),
+            Ne(t1, t2) => todo!(),
+            Lt(t1, t2) => todo!(),
+            Le(t1, t2) => todo!(),
+            Gt(t1, t2) => todo!(),
+            Ge(t1, t2) => todo!(),
+
             _ => panic!("cannot step a value"),
         }
     }

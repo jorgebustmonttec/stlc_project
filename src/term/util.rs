@@ -12,6 +12,13 @@ impl From<&str> for Box<Term> {
     }
 }
 
+// Implicitly converts integers to integer terms
+impl From<i32> for Box<Term> {
+    fn from(int: i32) -> Self {
+        Box::new(Int(int))
+    }
+}
+
 pub fn abs(var: impl ToString, ty: impl Into<Type>, body: impl Into<Box<Term>>) -> Term {
     Abs {
         var: var.to_string(),
@@ -39,6 +46,33 @@ pub fn ite(
         if_true: if_true.into(),
         if_false: if_false.into(),
     }
+
+pub fn add(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Add(t1.into(), t2.into())
+}
+pub fn sub(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Sub(t1.into(), t2.into())
+}
+pub fn mul(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Mul(t1.into(), t2.into())
+}
+pub fn eq(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Eq(t1.into(), t2.into())
+}
+pub fn ne(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Ne(t1.into(), t2.into())
+}
+pub fn lt(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Lt(t1.into(), t2.into())
+}
+pub fn le(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Le(t1.into(), t2.into())
+}
+pub fn gt(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Gt(t1.into(), t2.into())
+}
+pub fn ge(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Ge(t1.into(), t2.into())
 }
 
 pub fn id2() -> Term {

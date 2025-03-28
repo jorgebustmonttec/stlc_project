@@ -42,26 +42,23 @@ impl Term {
                 body.infer_type(ctx)
             }
 
-            //True | False => todo!(),
             True | False => Ok(Boolean),
             Ite {
                 cond,
                 if_true,
                 if_false,
-                /* } => {
-                    todo!()
-                }*/
             } => {
-                let ty_cond = cond.infer_type(ctx.clone())?;
-                if ty_cond == Boolean {
-                    let ty_true = if_true.infer_type(ctx.clone())?;
-                    let ty_false = if_false.infer_type(ctx)?;
-                    if ty_true == ty_false {
-                        return Ok(ty_true);
+                if let Boolean = cond.infer_type(ctx.clone())? {
+                    let ty1 = if_true.infer_type(ctx.clone())?;
+                    let ty2 = if_false.infer_type(ctx.clone())?;
+                    if ty1 == ty2 {
+                        return Ok(ty1);
                     }
                 }
                 Err(Fail)
             }
+
+            _ => todo!(),
         }
     }
 

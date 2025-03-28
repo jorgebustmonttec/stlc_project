@@ -39,6 +39,28 @@ pub enum Term {
         if_true: Box<Term>,
         if_false: Box<Term>,
     },
+
+    /// An integer value
+    Int(i32),
+    /// Addition of two terms
+    Add(Box<Term>, Box<Term>),
+    /// Subtraction of two terms
+    Sub(Box<Term>, Box<Term>),
+    /// Multiplication of two terms
+    Mul(Box<Term>, Box<Term>),
+
+    /// Equality comparison
+    Eq(Box<Term>, Box<Term>),
+    /// Non-equality
+    Ne(Box<Term>, Box<Term>),
+    /// Less than
+    Lt(Box<Term>, Box<Term>),
+    /// Less than or equal
+    Le(Box<Term>, Box<Term>),
+    /// Greater than
+    Gt(Box<Term>, Box<Term>),
+    /// Greater than or equal
+    Ge(Box<Term>, Box<Term>),
 }
 
 use Term::*;
@@ -46,8 +68,8 @@ use Term::*;
 impl Term {
     /// Determines whether the term is a value.
     ///
-    /// Lambda abstractions [`Term::Abs`], [`Term::True`] and [`Term::False`] are considered values.
-    /// Let expressions, if-then-else expressions, applications, and variables are not values.
+    /// Lambda abstractions [`Term::Abs`], [`Term::True`], [`Term::False`] and [`Term::Int`] are considered values.
+    /// Let expressions, if-then-else expressions, comparison operators, applications, and variables are not values.
     ///
     /// # Examples
     ///
@@ -83,10 +105,6 @@ impl Term {
     /// assert!(!let_expr.is_value());
     /// ```
     pub fn is_value(&self) -> bool {
-        //todo!()
-        match self {
-            Abs { .. } | True | False => true,
-            _ => false,
-        }
+        todo!()
     }
 }

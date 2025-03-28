@@ -7,7 +7,11 @@ use super::Type::{self, *};
 use crate::parse::*;
 
 fn parse_base_type(input: &str) -> IResult<&str, Type> {
-    value(Boolean, tag("Boolean")).parse(input)
+    alt((
+        value(Boolean, tag("Boolean")),
+        value(Integer, tag("Integer")),
+    ))
+    .parse(input)
 }
 
 fn parse_paren_type(input: &str) -> IResult<&str, Type> {

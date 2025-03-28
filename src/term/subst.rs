@@ -67,15 +67,7 @@ impl Term {
                 var,
                 val_t: Box::new(val_t.subst(x, v)),
             },
-            /*
 
-            Ite {
-                cond,
-                if_true,
-                if_false,
-            } => todo!(),
-
-             */
             Ite {
                 cond,
                 if_true,
@@ -86,6 +78,16 @@ impl Term {
                 if_false: Box::new(if_false.subst(x, v)),
             },
 
+            Add(t1, t2) => todo!(),
+            Sub(t1, t2) => todo!(),
+            Mul(t1, t2) => todo!(),
+
+            Eq(t1, t2) => todo!(),
+            Ne(t1, t2) => todo!(),
+            Lt(t1, t2) => todo!(),
+            Le(t1, t2) => todo!(),
+            Gt(t1, t2) => todo!(),
+            Ge(t1, t2) => todo!(),
             _ => self,
         }
     }

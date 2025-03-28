@@ -7,6 +7,7 @@ pub mod util;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Type {
     Boolean,
+    Integer,
 
     /// Type of abstractions
     Arrow(Box<Type>, Box<Type>),
