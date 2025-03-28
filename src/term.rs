@@ -83,6 +83,10 @@ impl Term {
     /// assert!(!let_expr.is_value());
     /// ```
     pub fn is_value(&self) -> bool {
-        todo!()
+        //todo!()
+        match self {
+            Abs { .. } | True | False => true,
+            _ => false,
+        }
     }
 }
