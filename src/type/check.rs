@@ -178,7 +178,37 @@ impl Term {
                     _ => Err(Fail),
                 }
             }
+
+            // ============================Sum stuff============================
+
+            Inl(t, ty_r) => {
+                let ty_l = t.infer_type(ctx)?;
+                Ok(Sum(Box::new(ty_l), Box::new(ty_r.clone())))
+            }
+            Inr(t, ty_l) => {
+                let ty_r = t.infer_type(ctx)?;
+                Ok(Sum(Box::new(ty_l.clone()), Box::new(ty_r)))
+            }
+            Case { t, inl_var, inl_t, inr_var, inr_t } => {
+                let sum_ty = t.infer_type(ctx.clone())?;
+                if let Sum(ty_l, ty_r) = sum_ty {
+                    let mut ctx_l = ctx.clone();
+                    ctx_l.insert(inl_var.clone(), (*ty_l).clone());
+                    let inl_t_ty = inl_t.infer_type(ctx_l)?;
             
+                    let mut ctx_r = ctx;
+                    ctx_r.insert(inr_var.clone(), (*ty_r).clone());
+                    let inr_t_ty = inr_t.infer_type(ctx_r)?;
+            
+                    if inl_t_ty == inr_t_ty {
+                        Ok(inl_t_ty)
+                    } else {
+                        Err(Fail)
+                    }
+                } else {
+                    Err(Fail)
+                }
+            }
 
             _ => todo!(),
         }

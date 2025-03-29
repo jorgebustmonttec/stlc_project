@@ -9,3 +9,6 @@ pub fn prod(ty1: impl Into<Box<Type>>, ty2: impl Into<Box<Type>>) -> Type {
 pub fn list(ty: impl Into<Box<Type>>) -> Type {
     List(ty.into())
 }
+pub fn sum(ty1: impl Into<Box<Type>>, ty2: impl Into<Box<Type>>) -> Type {
+    Sum(ty1.into(), ty2.into())
+}

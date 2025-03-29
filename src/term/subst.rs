@@ -111,26 +111,53 @@ impl Term {
 
             // ============================List stuff============================
 
-        Nil(_) => self,
-        Cons(h, t) => Cons(Box::new(h.subst(x, v.clone())), Box::new(t.subst(x, v))),
+            Nil(_) => self,
+            Cons(h, t) => Cons(Box::new(h.subst(x, v.clone())), Box::new(t.subst(x, v))),
 
-        LCase { t, nil_t, head_var, tail_var, cons_t } => {
-            let new_t = Box::new(t.subst(x, v.clone()));
-            let new_nil_t = Box::new(nil_t.subst(x, v.clone()));
-            let new_cons_t = if x != head_var && x != tail_var {
-                Box::new(cons_t.subst(x, v))
-            } else {
-                cons_t
-            };
+            LCase { t, nil_t, head_var, tail_var, cons_t } => {
+                let new_t = Box::new(t.subst(x, v.clone()));
+                let new_nil_t = Box::new(nil_t.subst(x, v.clone()));
+                let new_cons_t = if x != head_var && x != tail_var {
+                    Box::new(cons_t.subst(x, v))
+                } else {
+                    cons_t
+                };
 
-            LCase {
-                t: new_t,
-                nil_t: new_nil_t,
-                head_var,
-                tail_var,
-                cons_t: new_cons_t,
+                LCase {
+                    t: new_t,
+                    nil_t: new_nil_t,
+                    head_var,
+                    tail_var,
+                    cons_t: new_cons_t,
+                }
             }
-        }
+            
+             // ============================Sum stuff============================
+
+            Inl(t, ty) => Inl(Box::new(t.subst(x, v)), ty),
+            Inr(t, ty) => Inr(Box::new(t.subst(x, v)), ty),
+
+            Case { t, inl_var, inl_t, inr_var, inr_t } => {
+                let new_t = Box::new(t.subst(x, v.clone()));
+                let new_inl_t = if x != inl_var {
+                    Box::new(inl_t.subst(x, v.clone()))
+                } else {
+                    inl_t
+                };
+                let new_inr_t = if x != inr_var {
+                    Box::new(inr_t.subst(x, v))
+                } else {
+                    inr_t
+                };
+
+                Case {
+                    t: new_t,
+                    inl_var,
+                    inl_t: new_inl_t,
+                    inr_var,
+                    inr_t: new_inr_t,
+                }
+            }
 
 
             _ => self,

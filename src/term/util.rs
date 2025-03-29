@@ -94,6 +94,29 @@ pub fn lcase(
     }
 }
 
+pub fn inl(t: impl Into<Box<Term>>, ty_r: impl Into<Type>) -> Term {
+    Inl(t.into(), ty_r.into())
+}
+pub fn inr(t: impl Into<Box<Term>>, ty_r: impl Into<Type>) -> Term {
+    Inr(t.into(), ty_r.into())
+}
+
+pub fn case(
+    t: impl Into<Box<Term>>,
+    inl_var: impl ToString,
+    inl_t: impl Into<Box<Term>>,
+    inr_var: impl ToString,
+    inr_t: impl Into<Box<Term>>,
+) -> Term {
+    Case {
+        t: t.into(),
+        inl_var: inl_var.to_string(),
+        inl_t: inl_t.into(),
+        inr_var: inr_var.to_string(),
+        inr_t: inr_t.into(),
+    }
+}
+
 pub fn id2() -> Term {
     abs("x", Boolean, "x")
 }

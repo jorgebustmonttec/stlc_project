@@ -277,6 +277,47 @@ impl Term {
                 }
             }
 
+            // ============================Sum stuff============================
+            // ===== Inl Evaluation Rule =====
+            Inl(t, ty) => {
+                if !t.is_value() {
+                    Inl(Box::new(t.step()), ty)
+                } else {
+                    panic!("attempted to step inl of value")
+                }
+            }
+
+            // ===== Inr Evaluation Rule =====
+            Inr(t, ty) => {
+                if !t.is_value() {
+                    Inr(Box::new(t.step()), ty)
+                } else {
+                    panic!("attempted to step inr of value")
+                }
+            }
+
+            // ===== Case Evaluation Rule =====
+            Case { t, inl_var, inl_t, inr_var, inr_t } => {
+                let t = *t;
+                if !t.is_value() {
+                    Case {
+                        t: Box::new(t.step()),
+                        inl_var,
+                        inl_t,
+                        inr_var,
+                        inr_t,
+                    }
+                } else {
+                    match t {
+                        Inl(v, _) if v.is_value() => inl_t.subst(&inl_var, *v),
+                        Inr(v, _) if v.is_value() => inr_t.subst(&inr_var, *v),
+                        Inl(_, _) | Inr(_, _) => panic!("case on non-value inl/inr"),
+                        _ => panic!("case on non-sum value"),
+                    }
+                }
+            }
+
+
             _ => panic!("cannot step a value"),
         }
     }

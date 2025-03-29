@@ -103,6 +103,27 @@ pub enum Term {
          tail_var: String,
          cons_t: Box<Term>,
      },
+
+    // ===========================Sum stuff============================
+
+    /// Injection to the left with the type of the right
+    Inl(Box<Term>, Type),
+    /// Injection to the right with the type of the left
+    Inr(Box<Term>, Type),
+    /// Case analysis for sum types
+    ///
+    /// ```text
+    /// lcase t of
+    /// | inl inl_var => inl_t
+    /// | inr inr_var => inr_t
+    /// ```
+    Case {
+        t: Box<Term>,
+        inl_var: String,
+        inl_t: Box<Term>,
+        inr_var: String,
+        inr_t: Box<Term>,
+    },
  
 
     
@@ -157,6 +178,9 @@ impl Term {
             Pair(t1, t2) => t1.is_value() && t2.is_value(),
             Nil(_) => true,
             Cons(t1, t2) => t1.is_value() && t2.is_value(),
+            Inl(t, _) => t.is_value(),
+            Inr(t, _) => t.is_value(),
+
 
             _ => false,
         }

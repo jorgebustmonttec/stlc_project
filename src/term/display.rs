@@ -66,6 +66,18 @@ impl std::fmt::Display for Term {
                 f,
                 "lcase {t} of | nil ⇒ {nil_t} | cons {head_var} {tail_var} ⇒ {cons_t}"
             ),
+            Inl(term, _) => write!(f, "inl {term}"),
+            Inr(term, _) => write!(f, "inr {term}"),
+            Case {
+                t,
+                inl_var,
+                inl_t,
+                inr_var,
+                inr_t,
+            } => write!(
+                f,
+                "case {t} of | inl {inl_var} ⇒ {inl_t} | inr {inr_var} ⇒ {inr_t}"
+            ),
         }
     }
 }

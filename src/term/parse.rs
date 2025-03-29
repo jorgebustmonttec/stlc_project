@@ -10,7 +10,7 @@ use nom::{
 
 use super::Term::{self, *};
 use crate::parse::*;
-use crate::r#type::parse::*;
+use crate::r#type::{parse::*, Type};
 
 pub fn parse_variable_name(input: &str) -> IResult<&str, String> {
     verify(
@@ -18,7 +18,7 @@ pub fn parse_variable_name(input: &str) -> IResult<&str, String> {
         |name: &str| {
             ![
                 "fun", "let", "in", "if", "then", "else", "True", "False", "Integer", "Boolean",
-                "fst", "snd", "List", "lcase", "of", "nil", "cons",
+                "fst", "snd", "List", "inl", "inr", "case", "lcase", "of", "nil", "cons", "fix",
             ]
             .contains(&name)
         },
@@ -118,7 +118,7 @@ fn parse_fst_snd(input: &str) -> IResult<&str, Term> {
 
 fn parse_nil(input: &str) -> IResult<&str, Term> {
     (tag("nil"), multispace1, parse_type_primary)
-        .map(|(_nil, _ws, ty)| Nil(ty))
+        .map(|(_nil, _ws, ty)| Nil(ty.into()))
         .parse(input)
 }
 
@@ -178,6 +178,77 @@ fn parse_lcase(input: &str) -> IResult<&str, Term> {
         .parse(input)
 }
 
+fn parse_inl_inr(input: &str) -> IResult<&str, Term> {
+    (
+        alt((
+            value(Inl as fn(Box<Term>, Type) -> Term, tag("inl")),
+            value(Inr as fn(Box<Term>, Type) -> Term, tag("inr")),
+        )),
+        multispace1,
+        parse_term_primary,
+        multispace1,
+        parse_type_primary,
+    )
+        .map(|(op, _, t, _, ty)| op(t.into(), ty))
+        .parse(input)
+}
+
+fn parse_case(input: &str) -> IResult<&str, Term> {
+    let arm_l = (
+        tag("|"),
+        multispace0,
+        tag("inl"),
+        multispace1,
+        parse_variable_name,
+        multispace0,
+        tag("=>"),
+        multispace0,
+        parse_term,
+    );
+    let arm_r = (
+        tag("|"),
+        multispace0,
+        tag("inr"),
+        multispace1,
+        parse_variable_name,
+        multispace0,
+        tag("=>"),
+        multispace0,
+        parse_term,
+    );
+    (
+        tag("case"),
+        multispace1,
+        parse_term,
+        multispace1,
+        tag("of"),
+        multispace0,
+        arm_l,
+        multispace0,
+        arm_r,
+    )
+        .map(
+            |(
+                _,
+                _,
+                t,
+                _,
+                _,
+                _,
+                (_, _, _, _, inl_var, _, _, _, inl_t),
+                _,
+                (_, _, _, _, inr_var, _, _, _, inr_t),
+            )| Case {
+                t: t.into(),
+                inl_var,
+                inl_t: inl_t.into(),
+                inr_var,
+                inr_t: inr_t.into(),
+            },
+        )
+        .parse(input)
+}
+
 fn parse_let(input: &str) -> IResult<&str, Term> {
     (
         tag("let"),
@@ -212,6 +283,8 @@ pub fn parse_term(input: &str) -> IResult<&str, Term> {
         parse_nil,
         parse_cons,
         parse_lcase,
+        parse_inl_inr,
+        parse_case,
         parse_let,
         parse_abs,
     ))

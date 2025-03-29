@@ -15,6 +15,8 @@ pub enum Type {
     Prod(Box<Type>, Box<Type>),
     /// Type of lists
     List(Box<Type>),
+    /// Type of sums
+    Sum(Box<Type>, Box<Type>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
