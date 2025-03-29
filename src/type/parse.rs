@@ -1,10 +1,10 @@
 use nom::{
-    IResult, Parser, branch::alt, bytes::complete::tag, character::complete::char,
-    combinator::value, sequence::delimited,
+    branch::alt, bytes::complete::tag, character::complete::char, combinator::value,
+    sequence::delimited, IResult, Parser,
 };
 
+use super::super::parse::*;
 use super::Type::{self, *};
-use crate::parse::*;
 
 fn parse_base_type(input: &str) -> IResult<&str, Type> {
     alt((
@@ -28,8 +28,18 @@ fn parse_arrow_type(input: &str) -> IResult<&str, Type> {
     }
 }
 
+fn parse_prod_type(input: &str) -> IResult<&str, Type> {
+    delimited(
+        char('('),
+        (ws0(parse_type), char(','), ws0(parse_type)),
+        char(')'),
+    )
+    .map(|(ty1, _, ty2)| Prod(ty1.into(), ty2.into()))
+    .parse(input)
+}
+
 pub fn parse_type_primary(input: &str) -> IResult<&str, Type> {
-    alt((parse_base_type, parse_paren_type)).parse(input)
+    alt((parse_base_type, parse_prod_type, parse_paren_type)).parse(input)
 }
 
 pub fn parse_type(input: &str) -> IResult<&str, Type> {

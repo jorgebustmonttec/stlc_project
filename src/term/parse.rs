@@ -1,11 +1,11 @@
 use nom::{
-    IResult, Parser,
     branch::alt,
     bytes::complete::tag,
     character::complete::{alpha1, alphanumeric0, char, digit1, multispace0, multispace1},
     combinator::{value, verify},
     multi::fold_many0,
     sequence::delimited,
+    IResult, Parser,
 };
 
 use super::Term::{self, *};
@@ -18,6 +18,7 @@ pub fn parse_variable_name(input: &str) -> IResult<&str, String> {
         |name: &str| {
             ![
                 "fun", "let", "in", "if", "then", "else", "True", "False", "Integer", "Boolean",
+                "fst", "snd",
             ]
             .contains(&name)
         },
@@ -115,11 +116,41 @@ fn parse_ite(input: &str) -> IResult<&str, Term> {
 }
 
 pub fn parse_term_primary(input: &str) -> IResult<&str, Term> {
-    alt((parse_paren, parse_var, parse_int, parse_bool)).parse(input)
+    alt((parse_paren, parse_var, parse_pair, parse_int, parse_bool)).parse(input)
 }
 
 pub fn parse_term(input: &str) -> IResult<&str, Term> {
-    alt((parse_comparison, parse_ite, parse_abs, parse_let)).parse(input)
+    alt((
+        parse_comparison,
+        parse_let,
+        parse_ite,
+        parse_abs,
+        parse_fst,
+        parse_snd,
+    ))
+    .parse(input)
+}
+
+fn parse_pair(input: &str) -> IResult<&str, Term> {
+    delimited(
+        char('('),
+        (ws0(parse_term), char(','), ws0(parse_term)),
+        char(')'),
+    )
+    .map(|(t1, _, t2)| Pair(t1.into(), t2.into()))
+    .parse(input)
+}
+
+fn parse_fst(input: &str) -> IResult<&str, Term> {
+    (tag("fst"), multispace1, parse_term_primary)
+        .map(|(_, _, t)| Fst(t.into()))
+        .parse(input)
+}
+
+fn parse_snd(input: &str) -> IResult<&str, Term> {
+    (tag("snd"), multispace1, parse_term_primary)
+        .map(|(_, _, t)| Snd(t.into()))
+        .parse(input)
 }
 
 /// Parses a multiplication, which is lower in priority than applications, but higher than +/-

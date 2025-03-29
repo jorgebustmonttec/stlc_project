@@ -65,6 +65,16 @@ pub fn ge(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
     Ge(t1.into(), t2.into())
 }
 
+pub fn pair(t1: impl Into<Box<Term>>, t2: impl Into<Box<Term>>) -> Term {
+    Pair(t1.into(), t2.into())
+}
+pub fn fst(t: impl Into<Box<Term>>) -> Term {
+    Fst(t.into())
+}
+pub fn snd(t: impl Into<Box<Term>>) -> Term {
+    Snd(t.into())
+}
+
 pub fn id2() -> Term {
     abs("x", Boolean, "x")
 }

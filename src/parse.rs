@@ -1,7 +1,7 @@
 use nom::{
-    Parser,
     character::complete::{multispace0, multispace1},
     sequence::delimited,
+    Parser,
 };
 
 pub fn ws0<'a, F: 'a, O>(

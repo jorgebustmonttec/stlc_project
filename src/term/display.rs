@@ -1,43 +1,47 @@
-use super::Term;
+use nom::{
+    branch::alt, bytes::complete::tag, character::complete::char, combinator::value,
+    sequence::delimited, IResult, Parser,
+};
 
-impl std::fmt::Display for Term {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use Term::*;
-        match self {
-            Var(x) => write!(f, "{x}"),
-            Abs { var, ty, body } => write!(f, "𝜆 {var} : {ty}. {body}"),
-            App(term1, term2) => match (&**term1, &**term2) {
-                (term1 @ (Var(_) | True | False), term2 @ (Var(_) | True | False)) => {
-                    write!(f, "{term1} {term2}")
-                }
-                (term1 @ Var(_), term2) => {
-                    write!(f, "{term1} ({term2})")
-                }
-                (term1, term2 @ (Var(_) | True | False)) => {
-                    write!(f, "({term1}) {term2}")
-                }
-                // Otherwise add parens
-                _ => write!(f, "({term1}) ({term2})"),
-            },
-            Let { var, val_t, body } => write!(f, "let {var} = {val_t} in {body}"),
-            True => write!(f, "True"),
-            False => write!(f, "False"),
-            Ite {
-                cond,
-                if_true,
-                if_false,
-            } => write!(f, "if {cond} then {if_true} else {if_false}"),
+use super::super::parse::*;
+use super::Type::{self, *};
 
-            Int(n) => write!(f, "{n}"),
-            Add(term1, term2) => write!(f, "{term1} + {term2}"),
-            Sub(term1, term2) => write!(f, "{term1} - {term2}"),
-            Mul(term1, term2) => write!(f, "{term1} * {term2}"),
-            Eq(term1, term2) => write!(f, "{term1} == {term2}"),
-            Ne(term1, term2) => write!(f, "{term1} != {term2}"),
-            Lt(term1, term2) => write!(f, "{term1} < {term2}"),
-            Le(term1, term2) => write!(f, "{term1} <= {term2}"),
-            Gt(term1, term2) => write!(f, "{term1} > {term2}"),
-            Ge(term1, term2) => write!(f, "{term1} >= {term2}"),
-        }
+fn parse_base_type(input: &str) -> IResult<&str, Type> {
+    alt((
+        value(Boolean, tag("Boolean")),
+        value(Integer, tag("Integer")),
+    ))
+    .parse(input)
+}
+
+fn parse_paren_type(input: &str) -> IResult<&str, Type> {
+    delimited(char('('), ws0(parse_type), char(')')).parse(input)
+}
+
+fn parse_arrow_type(input: &str) -> IResult<&str, Type> {
+    let (rest, ty1) = parse_type_primary.parse(input)?;
+
+    if let Ok((rest, (_, ty2))) = (ws0(tag("->")), parse_arrow_type).parse(rest) {
+        Ok((rest, Arrow(ty1.into(), ty2.into())))
+    } else {
+        Ok((rest, ty1))
     }
+}
+
+fn parse_prod_type(input: &str) -> IResult<&str, Type> {
+    delimited(
+        char('('),
+        (ws0(parse_type), char(','), ws0(parse_type)),
+        char(')'),
+    )
+    .map(|(ty1, _, ty2)| Prod(ty1.into(), ty2.into()))
+    .parse(input)
+}
+
+pub fn parse_type_primary(input: &str) -> IResult<&str, Type> {
+    alt((parse_base_type, parse_prod_type, parse_paren_type)).parse(input)
+}
+
+pub fn parse_type(input: &str) -> IResult<&str, Type> {
+    parse_arrow_type.parse(input)
 }
