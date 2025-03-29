@@ -1,64 +1,34 @@
 /*
 
-Arithmetic and comparisons
-0 / 40 points
+Pairs
+0 / 25 points
 
-The starter code is organized like in the previous exercise (STLC + 2), and contains a parser and utilities for booleans.
+Your task is to implement the dynamics and statics of pairs on top of STLC + ℤ + 𝟚 according to the evaluation and typing rules presented in the material. The starter code no longer contains the solution to the previous exercise, but only parsing and other utilities. From this point onwards you are expected to extend your version of the language with the new features.
 
-
-
-
-Your task is to implement the dynamics and statics of integers and arithmetic on top of STLC + 2 according to the evaluation and typing rules presented in the material. The starter code contains the solution to the previous exercise with holes added for you to fill in. Either use the starter code as the starting point or make the following changes to your version of the project:
-
-Extend Term with integers, arithmetic and comparison operators
-    /// An integer value
-    Int(i32),
-    /// Addition of two terms
-    Add(Box<Term>, Box<Term>),
-    /// Subtraction of two terms
-    Sub(Box<Term>, Box<Term>),
-    /// Multiplication of two terms
-    Mul(Box<Term>, Box<Term>),
-
-<pre><code>/// Equality comparison
-Eq(Box&lt;Term&gt;, Box&lt;Term&gt;),
-/// Non-equality
-Ne(Box&lt;Term&gt;, Box&lt;Term&gt;),
-/// Less than
-Lt(Box&lt;Term&gt;, Box&lt;Term&gt;),
-/// Less than or equal
-Le(Box&lt;Term&gt;, Box&lt;Term&gt;),
-/// Greater than
-Gt(Box&lt;Term&gt;, Box&lt;Term&gt;),
-/// Greater than or equal
-Ge(Box&lt;Term&gt;, Box&lt;Term&gt;),
-</code>
-Extend Type with integers:
-pub enum Type {
-    Boolean,
-    Integer,
-
-    /// Type of abstractions
-    Arrow(Box<Type>, Box<Type>),
-}
-From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types. The parsing code implements left-associative infix parsing for the common operators +, -, *, ==, != <, <=, >, >= with natural order of operations.
-The grader only tests step, multistep and type_check and does not test parsing or utilities.
+Extend Term with the pairs and projections:
+    /// A pair consisting of terms
+    Pair(Box<Term>, Box<Term>),
+    /// The first term in the pair
+    Fst(Box<Term>),
+    /// The second term in the pair
+    Snd(Box<Term>),
+Extend Type with products:
+    /// Product type (Pair)
+    Prod(Box<Type>, Box<Type>),
+From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types. The parsing code supports creating pairs with parenthesis, e.g. (1, 2) and the projection operators fst, snd. Note that applying fst, snd usually needs to be surrounded in parentheses. You may change this behavior in the parser if you wish.
+The grader only tests the is_value, subst, step, multistep and type_check methods and does not test parsing or utilities.
 
 
 
 
 Here is a sample from the REPL:
 
-> let a = 5 in a + 2
+> let p = (fun x : Integer, (x, False), 2) in (fst p) 10
+(10, False) :: ℤ × 𝟚
+> let add = (fun p : (Integer, Integer), (fst p) + (snd p)) in add
+𝜆 p : ℤ × ℤ. fst p + snd p :: ℤ × ℤ → ℤ
+> let add = (fun p : (Integer, Integer), (fst p) + (snd p)) in add (2, 5)
 7 :: ℤ
-> let a = 5 in if a < 7 then a + 7 else False
-type error
-> let a = 5 in if a < 7 then a + 7 else a
-12 :: ℤ
-> let f = (fun x : Integer, 2 * x) in 1 + f 4 - 8
-1 :: ℤ
-> let f = (fun x : Integer, f x) in f
-undefined variable: f
 
 
 */
