@@ -206,6 +206,9 @@ impl Term {
                 t1,
                 t2,
             ),
+
+            // ============================Pair stuff============================
+
             Pair(t1, t2) => {
                 if !t1.is_value() {
                     Pair(Box::new(t1.step()), t2)
@@ -239,6 +242,41 @@ impl Term {
                     }
                 }
             }
+
+            // ============================List stuff============================
+
+            Cons(h, t) => {
+                if !h.is_value() {
+                    Cons(Box::new(h.step()), t)
+                } else if !t.is_value() {
+                    Cons(h, Box::new(t.step()))
+                } else {
+                    panic!("attempted to step cons of values")
+                }
+            }
+
+            LCase { t, nil_t, head_var, tail_var, cons_t } => {
+                let t = *t;
+                if !t.is_value() {
+                    LCase {
+                        t: Box::new(t.step()),
+                        nil_t,
+                        head_var,
+                        tail_var,
+                        cons_t,
+                    }
+                } else {
+                    match t {
+                        Nil(_) => *nil_t,
+                        Cons(h, t) if h.is_value() && t.is_value() => {
+                            cons_t.subst(&head_var, *h).subst(&tail_var, *t)
+                        }
+                        Cons(_, _) => panic!("lcase on cons with non-value parts"),
+                        _ => panic!("lcase on non-list"),
+                    }
+                }
+            }
+
             _ => panic!("cannot step a value"),
         }
     }

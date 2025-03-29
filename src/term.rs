@@ -155,6 +155,8 @@ impl Term {
         match self {
             Abs { .. } | True | False | Int(_) => true,
             Pair(t1, t2) => t1.is_value() && t2.is_value(),
+            Nil(_) => true,
+            Cons(t1, t2) => t1.is_value() && t2.is_value(),
 
             _ => false,
         }

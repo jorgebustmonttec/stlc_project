@@ -147,6 +147,37 @@ impl Term {
                     _ => Err(Fail),
                 }
             }
+
+            // ============================List stuff============================
+
+            Nil(ty) => Ok(List(Box::new(ty.clone()))),
+
+            Cons(head, tail) => {
+                let head_ty = head.infer_type(ctx.clone())?;
+                let tail_ty = tail.infer_type(ctx)?;
+                match tail_ty {
+                    List(inner_ty) if *inner_ty == head_ty => Ok(List(Box::new(head_ty))),
+                    _ => Err(Fail),
+                }
+            }
+    
+            LCase { t, nil_t, head_var, tail_var, cons_t } => {
+                let list_ty = t.infer_type(ctx.clone())?;
+                match list_ty {
+                    List(inner_ty) => {
+                        let nil_ty = nil_t.infer_type(ctx.clone())?;
+                        ctx.insert(head_var.clone(), (*inner_ty).clone());
+                        ctx.insert(tail_var.clone(), List(inner_ty));
+                        let cons_ty = cons_t.infer_type(ctx)?;
+                        if nil_ty == cons_ty {
+                            Ok(nil_ty)
+                        } else {
+                            Err(Fail)
+                        }
+                    }
+                    _ => Err(Fail),
+                }
+            }
             
 
             _ => todo!(),
