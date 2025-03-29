@@ -1,32 +1,31 @@
-/*
-List
+/*Sums
 0 / 25 points
 
-Your task is to implement the dynamics and statics of lists on top of STLC + ℤ + 𝟚 + pairs according to the evaluation and typing rules presented in the material.
+Your task is to implement the dynamics and statics of sums on top of STLC + ℤ + 𝟚 + pairs + lists according to the evaluation and typing rules presented in the material.
 
-Extend Term with list constructors and list case expressions:
-    /// An empty list of some item type
-    Nil(Type),
-    /// The recursive constructor for lists, holds the head and the tail in the following order: `Cons(head, tail)`.
-    Cons(Box<Term>, Box<Term>),
-    /// Case analysis for lists
+Extend Term with sums:
+    /// Injection to the left with the type of the right
+    Inl(Box<Term>, Type),
+    /// Injection to the right with the type of the left
+    Inr(Box<Term>, Type),
+    /// Case analysis for sum types
     ///
     /// ```text
     /// lcase t of
-    /// | nil => nil_t
-    /// | cons cons_var tail_var => cons_t
+    /// | inl inl_var => inl_t
+    /// | inr inr_var => inr_t
     /// ```
-    LCase {
+    Case {
         t: Box<Term>,
-        nil_t: Box<Term>,
-        head_var: String,
-        tail_var: String,
-        cons_t: Box<Term>,
+        inl_var: String,
+        inl_t: Box<Term>,
+        inr_var: String,
+        inr_t: Box<Term>,
     },
 Extend Type with lists:
-    /// Type of lists
-    List(Box<Ty>),
-From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types. The parsing code supports creating lists with nil T, cons h t and the lcase expression lcase l of | nil => t1 | cons h t => t2. Note that nil T, cons h t usually need to be surrounded in parentheses. The type of a list of integers can be written with List Integer or [Integer].
+    /// Type of sums
+    Sum(Box<Type>, Box<Type>),
+From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types. The parsing code supports creating sums with inl t T, inr t T and the case expression case s of | inl x => t1 | inr y => t2. Note that inl t T, inr t T usually need to be surrounded in parentheses. The sum type consisting of either an integer or a boolean is written as Integer + Boolean.
 The grader only tests the is_value, subst, step, multistep and type_check methods and does not test parsing or utilities.
 
 
@@ -34,13 +33,14 @@ The grader only tests the is_value, subst, step, multistep and type_check method
 
 Here is a sample from the REPL:
 
-> let hdor0 = (fun l : [Integer], lcase l of | nil => 0 | cons h t => h) in hdor0
-𝜆 l : [ℤ]. lcase l of | nil ⇒ 0 | cons h t ⇒ h :: [ℤ] → ℤ
-> let hdor0 = (fun l : [Integer], lcase l of | nil => 0 | cons h t => h) in hdor0 (nil Integer)
-0 :: ℤ
-> let hdor0 = (fun l : [Integer], lcase l of | nil => 0 | cons h t => h) in hdor0 (cons 5 (nil Integer))
+> case inl (2, 3) Integer of | inl x => fst x | inr y => y
+2 :: ℤ
+> let toint = (fun x : Boolean + Integer, case x of | inl b => if b then 1 else 0 | inr i => i) in toint
+𝜆 x : 𝟚 + ℤ. case x of | inl b ⇒ if b then 1 else 0 | inr i ⇒ i :: 𝟚 + ℤ → ℤ
+> let toint = (fun x : Boolean + Integer, case x of | inl b => if b then 1 else 0 | inr i => i) in toint (inl True Integer)
+1 :: ℤ
+> let toint = (fun x : Boolean + Integer, case x of | inl b => if b then 1 else 0 | inr i => i) in toint (inr 5 Boolean)
 5 :: ℤ
-
 */
 use nom::Parser;
 use nom::combinator::all_consuming;
