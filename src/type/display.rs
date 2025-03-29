@@ -27,6 +27,7 @@ impl std::fmt::Display for Type {
                 // Otherwise no parens
                 _ => write!(f, "{ty1} × {ty2}"),
             },
+            List(ty) => write!(f, "[{ty}]"),
         }
     }
 }

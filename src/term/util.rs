@@ -75,6 +75,25 @@ pub fn snd(t: impl Into<Box<Term>>) -> Term {
     Snd(t.into())
 }
 
+pub fn cons(head: impl Into<Box<Term>>, tail: impl Into<Box<Term>>) -> Term {
+    Cons(head.into(), tail.into())
+}
+pub fn lcase(
+    t: impl Into<Box<Term>>,
+    nil_t: impl Into<Box<Term>>,
+    head_var: impl ToString,
+    tail_var: impl ToString,
+    cons_t: impl Into<Box<Term>>,
+) -> Term {
+    LCase {
+        t: t.into(),
+        nil_t: nil_t.into(),
+        head_var: head_var.to_string(),
+        tail_var: tail_var.to_string(),
+        cons_t: cons_t.into(),
+    }
+}
+
 pub fn id2() -> Term {
     abs("x", Boolean, "x")
 }

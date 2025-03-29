@@ -6,3 +6,6 @@ pub fn arrow(ty1: impl Into<Box<Type>>, ty2: impl Into<Box<Type>>) -> Type {
 pub fn prod(ty1: impl Into<Box<Type>>, ty2: impl Into<Box<Type>>) -> Type {
     Prod(ty1.into(), ty2.into())
 }
+pub fn list(ty: impl Into<Box<Type>>) -> Type {
+    List(ty.into())
+}

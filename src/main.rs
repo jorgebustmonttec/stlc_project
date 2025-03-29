@@ -1,21 +1,32 @@
 /*
-
-Pairs
+List
 0 / 25 points
 
-Your task is to implement the dynamics and statics of pairs on top of STLC + ℤ + 𝟚 according to the evaluation and typing rules presented in the material. The starter code no longer contains the solution to the previous exercise, but only parsing and other utilities. From this point onwards you are expected to extend your version of the language with the new features.
+Your task is to implement the dynamics and statics of lists on top of STLC + ℤ + 𝟚 + pairs according to the evaluation and typing rules presented in the material.
 
-Extend Term with the pairs and projections:
-    /// A pair consisting of terms
-    Pair(Box<Term>, Box<Term>),
-    /// The first term in the pair
-    Fst(Box<Term>),
-    /// The second term in the pair
-    Snd(Box<Term>),
-Extend Type with products:
-    /// Product type (Pair)
-    Prod(Box<Type>, Box<Type>),
-From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types. The parsing code supports creating pairs with parenthesis, e.g. (1, 2) and the projection operators fst, snd. Note that applying fst, snd usually needs to be surrounded in parentheses. You may change this behavior in the parser if you wish.
+Extend Term with list constructors and list case expressions:
+    /// An empty list of some item type
+    Nil(Type),
+    /// The recursive constructor for lists, holds the head and the tail in the following order: `Cons(head, tail)`.
+    Cons(Box<Term>, Box<Term>),
+    /// Case analysis for lists
+    ///
+    /// ```text
+    /// lcase t of
+    /// | nil => nil_t
+    /// | cons cons_var tail_var => cons_t
+    /// ```
+    LCase {
+        t: Box<Term>,
+        nil_t: Box<Term>,
+        head_var: String,
+        tail_var: String,
+        cons_t: Box<Term>,
+    },
+Extend Type with lists:
+    /// Type of lists
+    List(Box<Ty>),
+From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types. The parsing code supports creating lists with nil T, cons h t and the lcase expression lcase l of | nil => t1 | cons h t => t2. Note that nil T, cons h t usually need to be surrounded in parentheses. The type of a list of integers can be written with List Integer or [Integer].
 The grader only tests the is_value, subst, step, multistep and type_check methods and does not test parsing or utilities.
 
 
@@ -23,13 +34,12 @@ The grader only tests the is_value, subst, step, multistep and type_check method
 
 Here is a sample from the REPL:
 
-> let p = (fun x : Integer, (x, False), 2) in (fst p) 10
-(10, False) :: ℤ × 𝟚
-> let add = (fun p : (Integer, Integer), (fst p) + (snd p)) in add
-𝜆 p : ℤ × ℤ. fst p + snd p :: ℤ × ℤ → ℤ
-> let add = (fun p : (Integer, Integer), (fst p) + (snd p)) in add (2, 5)
-7 :: ℤ
-
+> let hdor0 = (fun l : [Integer], lcase l of | nil => 0 | cons h t => h) in hdor0
+𝜆 l : [ℤ]. lcase l of | nil ⇒ 0 | cons h t ⇒ h :: [ℤ] → ℤ
+> let hdor0 = (fun l : [Integer], lcase l of | nil => 0 | cons h t => h) in hdor0 (nil Integer)
+0 :: ℤ
+> let hdor0 = (fun l : [Integer], lcase l of | nil => 0 | cons h t => h) in hdor0 (cons 5 (nil Integer))
+5 :: ℤ
 
 */
 use nom::Parser;

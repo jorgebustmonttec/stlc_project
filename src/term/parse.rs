@@ -18,7 +18,7 @@ pub fn parse_variable_name(input: &str) -> IResult<&str, String> {
         |name: &str| {
             ![
                 "fun", "let", "in", "if", "then", "else", "True", "False", "Integer", "Boolean",
-                "fst", "snd",
+                "fst", "snd", "List", "lcase", "of", "nil", "cons",
             ]
             .contains(&name)
         },
@@ -67,28 +67,6 @@ fn parse_app(input: &str) -> IResult<&str, Term> {
     .parse(rest)
 }
 
-fn parse_let(input: &str) -> IResult<&str, Term> {
-    (
-        tag("let"),
-        multispace1,
-        parse_variable_name,
-        multispace0,
-        tag("="),
-        multispace0,
-        parse_term_primary,
-        multispace1,
-        tag("in"),
-        multispace1,
-        parse_term,
-    )
-        .map(|(_0, _1, var, _3, _4, _5, val_t, _7, _8, _9, body)| Let {
-            var,
-            val_t: val_t.into(),
-            body: body.into(),
-        })
-        .parse(input)
-}
-
 fn parse_int(input: &str) -> IResult<&str, Term> {
     digit1.map_res(str::parse).map(Int).parse(input)
 }
@@ -115,22 +93,6 @@ fn parse_ite(input: &str) -> IResult<&str, Term> {
         .parse(input)
 }
 
-pub fn parse_term_primary(input: &str) -> IResult<&str, Term> {
-    alt((parse_paren, parse_var, parse_pair, parse_int, parse_bool)).parse(input)
-}
-
-pub fn parse_term(input: &str) -> IResult<&str, Term> {
-    alt((
-        parse_comparison,
-        parse_let,
-        parse_ite,
-        parse_abs,
-        parse_fst,
-        parse_snd,
-    ))
-    .parse(input)
-}
-
 fn parse_pair(input: &str) -> IResult<&str, Term> {
     delimited(
         char('('),
@@ -141,16 +103,119 @@ fn parse_pair(input: &str) -> IResult<&str, Term> {
     .parse(input)
 }
 
-fn parse_fst(input: &str) -> IResult<&str, Term> {
-    (tag("fst"), multispace1, parse_term_primary)
-        .map(|(_, _, t)| Fst(t.into()))
+fn parse_fst_snd(input: &str) -> IResult<&str, Term> {
+    (
+        alt((
+            value(Fst as fn(Box<Term>) -> Term, tag("fst")),
+            value(Snd as fn(Box<Term>) -> Term, tag("snd")),
+        )),
+        multispace1,
+        parse_term_primary,
+    )
+        .map(|(op, _, t)| op(t.into()))
         .parse(input)
 }
 
-fn parse_snd(input: &str) -> IResult<&str, Term> {
-    (tag("snd"), multispace1, parse_term_primary)
-        .map(|(_, _, t)| Snd(t.into()))
+fn parse_nil(input: &str) -> IResult<&str, Term> {
+    (tag("nil"), multispace1, parse_type_primary)
+        .map(|(_nil, _ws, ty)| Nil(ty))
         .parse(input)
+}
+
+fn parse_cons(input: &str) -> IResult<&str, Term> {
+    (
+        tag("cons"),
+        multispace1,
+        parse_term_primary,
+        multispace1,
+        parse_term_primary,
+    )
+        .map(|(_cons, _ws1, head, _ws2, tail)| Cons(head.into(), tail.into()))
+        .parse(input)
+}
+
+fn parse_lcase(input: &str) -> IResult<&str, Term> {
+    let arm_nil = (
+        tag("|"),
+        multispace0,
+        tag("nil"),
+        multispace0,
+        tag("=>"),
+        multispace0,
+        parse_term,
+    );
+    let arm_cons = (
+        tag("|"),
+        multispace0,
+        tag("cons"),
+        multispace1,
+        parse_variable_name,
+        multispace1,
+        parse_variable_name,
+        multispace0,
+        tag("=>"),
+        multispace0,
+        parse_term,
+    );
+    (
+        tag("lcase"),
+        multispace1,
+        parse_term,
+        multispace1,
+        tag("of"),
+        multispace0,
+        arm_nil,
+        multispace0,
+        arm_cons,
+    )
+        .map(|(_, _, t, _, _, _, nil, _, cons)| LCase {
+            t: t.into(),
+            nil_t: nil.6.into(),
+            head_var: cons.4,
+            tail_var: cons.6,
+            cons_t: cons.10.into(),
+        })
+        .parse(input)
+}
+
+fn parse_let(input: &str) -> IResult<&str, Term> {
+    (
+        tag("let"),
+        multispace1,
+        parse_variable_name,
+        multispace0,
+        tag("="),
+        multispace0,
+        parse_term,
+        multispace1,
+        tag("in"),
+        multispace1,
+        parse_term,
+    )
+        .map(|(_, _, var, _, _, _, val_t, _, _, _, body)| Let {
+            var,
+            val_t: val_t.into(),
+            body: body.into(),
+        })
+        .parse(input)
+}
+
+pub fn parse_term_primary(input: &str) -> IResult<&str, Term> {
+    alt((parse_paren, parse_var, parse_int, parse_bool, parse_pair)).parse(input)
+}
+
+pub fn parse_term(input: &str) -> IResult<&str, Term> {
+    alt((
+        parse_comparison,
+        parse_ite,
+        parse_fst_snd,
+        parse_nil,
+        parse_cons,
+        parse_lcase,
+        parse_let,
+        parse_abs,
+    ))
+    .parse(input)
 }
 
 /// Parses a multiplication, which is lower in priority than applications, but higher than +/-

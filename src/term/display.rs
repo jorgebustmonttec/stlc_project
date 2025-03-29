@@ -1,8 +1,19 @@
-use super::Term;
+use super::Term::{self, *};
+
+/// Formats a [`Term::Cons`] recursively as `, 1, 2, 3` and [`Term::Nil`] as `]`.
+fn fmt_list(f: &mut std::fmt::Formatter<'_>, t: &Term) -> std::fmt::Result {
+    match t {
+        Nil(_) => write!(f, "]"),
+        Cons(head, tail) => {
+            write!(f, ", {head}")?;
+            fmt_list(f, tail)
+        }
+        _ => panic!("expected input to be Nil or Cons"),
+    }
+}
 
 impl std::fmt::Display for Term {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use Term::*;
         match self {
             Var(x) => write!(f, "{x}"),
             Abs { var, ty, body } => write!(f, "𝜆 {var} : {ty}. {body}"),
@@ -40,6 +51,21 @@ impl std::fmt::Display for Term {
             Pair(term1, term2) => write!(f, "({term1}, {term2})"),
             Fst(term) => write!(f, "fst {term}"),
             Snd(term) => write!(f, "snd {term}"),
+            Nil(_) => write!(f, "[]"),
+            Cons(x, xs) => {
+                write!(f, "[{x}")?;
+                fmt_list(f, xs)
+            }
+            LCase {
+                t,
+                nil_t,
+                head_var,
+                tail_var,
+                cons_t,
+            } => write!(
+                f,
+                "lcase {t} of | nil ⇒ {nil_t} | cons {head_var} {tail_var} ⇒ {cons_t}"
+            ),
         }
     }
 }
