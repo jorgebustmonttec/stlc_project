@@ -61,6 +61,13 @@ pub enum Term {
     Gt(Box<Term>, Box<Term>),
     /// Greater than or equal
     Ge(Box<Term>, Box<Term>),
+
+    /// A pair consisting of terms
+    Pair(Box<Term>, Box<Term>),
+    /// The first term in the pair
+    Fst(Box<Term>),
+    /// The second term in the pair
+    Snd(Box<Term>),
 }
 
 use Term::*;
@@ -109,6 +116,8 @@ impl Term {
 
         match self {
             Abs { .. } | True | False | Int(_) => true,
+            Pair(t1, t2) => t1.is_value() && t2.is_value(),
+
             _ => false,
         }
     }

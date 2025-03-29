@@ -130,6 +130,24 @@ impl Term {
                 }
                 Err(Fail)
             }
+            Pair(t1, t2) => {
+                let ty1 = t1.infer_type(ctx.clone())?;
+                let ty2 = t2.infer_type(ctx)?;
+                Ok(Prod(Box::new(ty1), Box::new(ty2)))
+            }
+            Fst(t) => {
+                match t.infer_type(ctx)? {
+                    Prod(ty1, _) => Ok(*ty1),
+                    _ => Err(Fail),
+                }
+            }
+            Snd(t) => {
+                match t.infer_type(ctx)? {
+                    Prod(_, ty2) => Ok(*ty2),
+                    _ => Err(Fail),
+                }
+            }
+            
 
             _ => todo!(),
         }

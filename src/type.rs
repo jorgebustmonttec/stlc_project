@@ -11,6 +11,8 @@ pub enum Type {
 
     /// Type of abstractions
     Arrow(Box<Type>, Box<Type>),
+    /// Product type (Pair)
+    Prod(Box<Type>, Box<Type>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

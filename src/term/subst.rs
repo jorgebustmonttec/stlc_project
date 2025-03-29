@@ -102,6 +102,11 @@ impl Term {
             Gt(t1, t2) => Gt(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
             Ge(t1, t2) => Ge(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
 
+            Pair(t1, t2) => Pair(Box::new(t1.subst(x, v.clone())), Box::new(t2.subst(x, v))),
+            Fst(t) => Fst(Box::new(t.subst(x, v))),
+            Snd(t) => Snd(Box::new(t.subst(x, v))),
+
+
             _ => self,
         }
     }

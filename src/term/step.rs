@@ -48,6 +48,7 @@ fn eval_ite(cond: Box<Term>, if_true: Box<Term>, if_false: Box<Term>) -> Term {
 impl Term {
     pub fn step(self) -> Self {
         match self {
+            
             Var(y) => panic!("cannot evaluate a variable: {y}"),
             App(t1, t2) => step_op2(App, eval_app, t1, t2),
 
@@ -205,7 +206,39 @@ impl Term {
                 t1,
                 t2,
             ),
-
+            Pair(t1, t2) => {
+                if !t1.is_value() {
+                    Pair(Box::new(t1.step()), t2)
+                } else if !t2.is_value() {
+                    Pair(t1, Box::new(t2.step()))
+                } else {
+                    panic!("attempted to step pair of values")
+                }
+            }
+            Fst(t1) => {
+                let inner = *t1;
+                if !inner.is_value() {
+                    Fst(Box::new(inner.step()))
+                } else {
+                    match inner {
+                        Pair(v1, v2) if v1.is_value() && v2.is_value() => *v1,
+                        Pair(_, _) => panic!("fst applied to pair with non-value elements"),
+                        _ => panic!("fst applied to non-pair value"),
+                    }
+                }
+            }
+            Snd(t1) => {
+                let inner = *t1;
+                if !inner.is_value() {
+                    Snd(Box::new(inner.step()))
+                } else {
+                    match inner {
+                        Pair(v1, v2) if v1.is_value() && v2.is_value() => *v2,
+                        Pair(_, _) => panic!("snd applied to pair with non-value elements"),
+                        _ => panic!("snd applied to non-pair value"),
+                    }
+                }
+            }
             _ => panic!("cannot step a value"),
         }
     }
