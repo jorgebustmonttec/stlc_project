@@ -10,6 +10,9 @@ pub mod util;
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Term {
+
+    // ==============================Lambda stuff==============================
+
     /// A variable term, represented by a string.
     Var(String),
     /// An abstraction (lambda function) with a variable and a body term.
@@ -21,6 +24,8 @@ pub enum Term {
     /// An application of one term to another.
     App(Box<Term>, Box<Term>),
 
+    // ==============================Let stuff==============================
+
     /// A let expression assigning a variable `var` to a value `val_t` in `body`.
     /// It is effectively just a subtitution.
     Let {
@@ -28,6 +33,8 @@ pub enum Term {
         val_t: Box<Term>,
         body: Box<Term>,
     },
+
+    // ==============================Boolean stuff==============================
 
     /// A true boolean value
     True,
@@ -40,6 +47,8 @@ pub enum Term {
         if_false: Box<Term>,
     },
 
+    // ==============================Integer stuff==============================
+
     /// An integer value
     Int(i32),
     /// Addition of two terms
@@ -48,6 +57,8 @@ pub enum Term {
     Sub(Box<Term>, Box<Term>),
     /// Multiplication of two terms
     Mul(Box<Term>, Box<Term>),
+
+    // ============================Comparison stuff============================
 
     /// Equality comparison
     Eq(Box<Term>, Box<Term>),
@@ -62,12 +73,39 @@ pub enum Term {
     /// Greater than or equal
     Ge(Box<Term>, Box<Term>),
 
+
+    // ============================Pair stuff============================
+
     /// A pair consisting of terms
     Pair(Box<Term>, Box<Term>),
     /// The first term in the pair
     Fst(Box<Term>),
     /// The second term in the pair
     Snd(Box<Term>),
+
+    // ===========================List stuff============================
+
+     /// An empty list of some item type
+     Nil(Type),
+     /// The recursive constructor for lists, holds the head and the tail in the following order: `Cons(head, tail)`.
+     Cons(Box<Term>, Box<Term>),
+     /// Case analysis for lists
+     ///
+     /// ```text
+     /// lcase t of
+     /// | nil => nil_t
+     /// | cons cons_var tail_var => cons_t
+     /// ```
+     LCase {
+         t: Box<Term>,
+         nil_t: Box<Term>,
+         head_var: String,
+         tail_var: String,
+         cons_t: Box<Term>,
+     },
+ 
+
+    
 }
 
 use Term::*;

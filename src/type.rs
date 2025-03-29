@@ -13,6 +13,8 @@ pub enum Type {
     Arrow(Box<Type>, Box<Type>),
     /// Product type (Pair)
     Prod(Box<Type>, Box<Type>),
+        /// Type of lists
+        List(Box<Ty>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
