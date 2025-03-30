@@ -117,6 +117,10 @@ pub fn case(
     }
 }
 
+pub fn fix(t: impl Into<Box<Term>>) -> Term {
+    Fix(t.into())
+}
+
 pub fn id2() -> Term {
     abs("x", Boolean, "x")
 }

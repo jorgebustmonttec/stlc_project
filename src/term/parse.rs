@@ -271,6 +271,12 @@ fn parse_let(input: &str) -> IResult<&str, Term> {
         .parse(input)
 }
 
+fn parse_fix(input: &str) -> IResult<&str, Term> {
+    (tag("fix"), multispace1, parse_term_primary)
+        .map(|(_, _, t)| Fix(Box::new(t)))
+        .parse(input)
+}
+
 pub fn parse_term_primary(input: &str) -> IResult<&str, Term> {
     alt((parse_paren, parse_var, parse_int, parse_bool, parse_pair)).parse(input)
 }
@@ -287,6 +293,7 @@ pub fn parse_term(input: &str) -> IResult<&str, Term> {
         parse_case,
         parse_let,
         parse_abs,
+        parse_fix,
     ))
     .parse(input)
 }

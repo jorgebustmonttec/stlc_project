@@ -78,6 +78,7 @@ impl std::fmt::Display for Term {
                 f,
                 "case {t} of | inl {inl_var} ⇒ {inl_t} | inr {inr_var} ⇒ {inr_t}"
             ),
+            Fix(term) => write!(f, "fix {term}"),
         }
     }
 }

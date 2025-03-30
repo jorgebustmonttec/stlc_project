@@ -34,6 +34,7 @@ use stlc_project::term::parse::parse_term;
 
 use rustyline::{DefaultEditor, error::ReadlineError};
 
+
 fn process(line: &str) -> Result<(), Box<dyn std::error::Error>> {
     let (_, t) = all_consuming(parse_term)
         .parse(line)
