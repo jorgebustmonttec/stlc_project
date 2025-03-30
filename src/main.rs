@@ -1,31 +1,15 @@
-/*Sums
+/*
+Fix
 0 / 25 points
 
-Your task is to implement the dynamics and statics of sums on top of STLC + ℤ + 𝟚 + pairs + lists according to the evaluation and typing rules presented in the material.
+Your task is to implement the dynamics and statics of fixed points on top of STLC + ℤ + 𝟚 + pairs + lists + sums according to the material in this chapter.
 
-Extend Term with sums:
-    /// Injection to the left with the type of the right
-    Inl(Box<Term>, Type),
-    /// Injection to the right with the type of the left
-    Inr(Box<Term>, Type),
-    /// Case analysis for sum types
-    ///
-    /// ```text
-    /// lcase t of
-    /// | inl inl_var => inl_t
-    /// | inr inr_var => inr_t
-    /// ```
-    Case {
-        t: Box<Term>,
-        inl_var: String,
-        inl_t: Box<Term>,
-        inr_var: String,
-        inr_t: Box<Term>,
-    },
-Extend Type with lists:
-    /// Type of sums
-    Sum(Box<Type>, Box<Type>),
-From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types. The parsing code supports creating sums with inl t T, inr t T and the case expression case s of | inl x => t1 | inr y => t2. Note that inl t T, inr t T usually need to be surrounded in parentheses. The sum type consisting of either an integer or a boolean is written as Integer + Boolean.
+Extend Term with the fixed point combinator:
+    /// Fixed point combinator.
+    /// Calculates the fixed point of the inner function.
+    Fix(Box<Term>),
+Type doesn't need new variants.
+From the starter code, copy the parsing code (parse.rs) and pretty printer code (display.rs) from the respective directories for terms and types.
 The grader only tests the is_value, subst, step, multistep and type_check methods and does not test parsing or utilities.
 
 
@@ -33,14 +17,16 @@ The grader only tests the is_value, subst, step, multistep and type_check method
 
 Here is a sample from the REPL:
 
-> case inl (2, 3) Integer of | inl x => fst x | inr y => y
-2 :: ℤ
-> let toint = (fun x : Boolean + Integer, case x of | inl b => if b then 1 else 0 | inr i => i) in toint
-𝜆 x : 𝟚 + ℤ. case x of | inl b ⇒ if b then 1 else 0 | inr i ⇒ i :: 𝟚 + ℤ → ℤ
-> let toint = (fun x : Boolean + Integer, case x of | inl b => if b then 1 else 0 | inr i => i) in toint (inl True Integer)
-1 :: ℤ
-> let toint = (fun x : Boolean + Integer, case x of | inl b => if b then 1 else 0 | inr i => i) in toint (inr 5 Boolean)
-5 :: ℤ
+> let fibGen = (fun fib : Integer -> Integer, fun n : Integer, if n <= 1 then n else fib (n - 1) + fib (n - 2)) in fibGen
+𝜆 fib : ℤ → ℤ. 𝜆 n : ℤ. if n <= 1 then n else fib (n - 1) + fib (n - 2) :: (ℤ → ℤ) → ℤ → ℤ
+# Notice that `fix fibGen` can be reduced immediately
+> let fibGen = (fun fib : Integer -> Integer, fun n : Integer, if n <= 1 then n else fib (n - 1) + fib (n - 2)) in fix fibGen
+𝜆 n : ℤ. if n <= 1 then n else (fix 𝜆 fib : ℤ → ℤ. 𝜆 n : ℤ. if n <= 1 then n else fib (n - 1) + fib (n - 2)) (n - 1) + (fix 𝜆 fib : ℤ → ℤ. 𝜆 n : ℤ. if n <= 1 then n else fib (n - 1) + fib (n - 2)) (n - 2) :: ℤ → ℤ
+> let fibGen = (fun fib : Integer -> Integer, fun n : Integer, if n <= 1 then n else fib (n - 1) + fib (n - 2)) in (fix fibGen) 10
+55 :: ℤ
+> let factGen = (fun fact : Integer -> Integer, fun n : Integer, if n <= 1 then 1 else n * fact (n - 1)) in (fix factGen) 10
+3628800 :: ℤ
+As a challenge, try defining the following functions even :: ℤ → ℤ, len :: [ℤ] → ℤ, sum :: [ℤ] → ℤ, map :: (ℤ → ℤ) → [ℤ] → [ℤ]. However, no points are awarded for completing this challenge.
 */
 use nom::Parser;
 use nom::combinator::all_consuming;
