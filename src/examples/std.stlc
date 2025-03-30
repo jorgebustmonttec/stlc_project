@@ -1,0 +1,26 @@
+import modules.a.b
+
+range : Integer -> Integer -> [Integer]
+range = fun start : Integer, fun end : Integer,
+    if start == end then
+        nil Integer
+    else
+        cons start (range (start + 1) end)
+
+sum : [Integer] -> Integer
+sum = fun xs : [Integer],
+    lcase xs of
+    | nil => 0
+    | cons x xs => x + sum xs
+
+append : [Integer] -> [Integer] -> [Integer]
+append = fun xs : [Integer], fun ys : [Integer],
+    lcase xs of
+    | nil => ys
+    | cons x xs => cons x (append xs ys)
+
+reverse : [Integer] -> [Integer]
+reverse = fun xs : [Integer],
+    lcase xs of
+    | nil => nil Integer
+    | cons x xs => append (reverse xs) (cons x (nil Integer))
