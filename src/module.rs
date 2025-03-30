@@ -45,7 +45,17 @@ impl Declaration {
     ///
     /// Is converted to a `let x = fix (fun x : Integer, 5) in <body>` with the argument `body` filled in.
     pub fn to_term_fix(self, body: Term) -> Term {
-        todo!()
+        let Declaration(name, ty, term) = self;
+
+        Let {
+            var: name.clone(),
+            val_t: Box::new(Fix(Box::new(Abs {
+                var: name,
+                ty: ty.clone(),
+                body: Box::new(term),
+            }))),
+            body: Box::new(body),
+        }
     }
 }
 
@@ -124,14 +134,17 @@ impl Module {
         body: Term,
     ) -> Result<Term, Box<dyn std::error::Error>> {
         let mut term = body;
+
         // Process declarations from bottom to top
         for decl in self.1.into_iter().rev() {
-            todo!()
+            term = decl.to_term_fix(term);
         }
+
         // Process imports from bottom to top
         for import in self.0.into_iter().rev() {
-            todo!()
+            term = import.read_to_term(&basepath, term)?;
         }
+
         Ok(term)
     }
 }
