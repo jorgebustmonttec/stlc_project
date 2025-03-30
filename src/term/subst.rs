@@ -159,6 +159,11 @@ impl Term {
                 }
             }
 
+            // ============================Fix stuff============================
+
+            Fix(inner) => Fix(Box::new(inner.subst(x, v))),
+
+
 
             _ => self,
         }

@@ -124,6 +124,11 @@ pub enum Term {
         inr_var: String,
         inr_t: Box<Term>,
     },
+
+    // ============================Fix stuff============================
+    /// Fixed point combinator.
+    /// Calculates the fixed point of the inner function.
+    Fix(Box<Term>),
  
 
     

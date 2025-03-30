@@ -210,6 +210,21 @@ impl Term {
                 }
             }
 
+            // ============================Fix stuff============================
+
+            Fix(inner) => {
+                let t_ty = inner.infer_type(ctx)?;
+                if let Type::Arrow(dom, cod) = t_ty {
+                    if *dom == *cod {
+                        Ok(*dom)
+                    } else {
+                        Err(Fail)
+                    }
+                } else {
+                    Err(Fail)
+                }
+            }
+
             _ => todo!(),
         }
     }

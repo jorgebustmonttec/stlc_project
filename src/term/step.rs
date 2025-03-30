@@ -317,6 +317,26 @@ impl Term {
                 }
             }
 
+            // ============================Fix stuff============================
+
+            Fix(inner) => {
+                match *inner {
+                    // Fix1: Reduce the inner term first if it's not a value
+                    ref t if !t.is_value() => Fix(Box::new(t.clone().step())),
+
+                    // Fix2: fix (\x:T. t) => [x -> fix (\x:T. t)] t
+                    Abs { var, ty, body } => {
+                        let clone = Fix(Box::new(Abs {
+                            var: var.clone(),
+                            ty: ty.clone(),
+                            body: body.clone(),
+                        }));
+                        body.subst(&var, clone)
+                    }
+                    _ => panic!("fix applied to non-abstraction value"),
+                }
+            }
+
 
             _ => panic!("cannot step a value"),
         }
